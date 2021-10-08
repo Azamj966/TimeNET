@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+###############################################################################
+# Program:		CONVERT_RESULTS [options] <netname>
+#
+# Purpose:		Calculate to token probability in each place by
+#                       reading in the .sol and .tmark file created by
+#                       SOLVE_DSPN. The output created is compatible with the
+#                       file format expected by DSPNexpress.
+#
+#                       The environment variable TNETHOME must be set to the
+#                       TNETZ base directory. The sub-directories bin and 
+#                       scripts have to be present. The variable MODELDIR
+#                       points to the models directory.
+#
+# Project Director:	Reinhard German
+#
+# Programmer:		Ulrich Hertlein
+#
+# History:		Release 1: April 14, 1994
+###############################################################################
+
+cleanup()
+{
+        # remove temporary files
+	rm -f $MODEL.map
+	rm -f $MODEL.sol 
+	rm -f ${MODEL}_ERC.c 
+#	rm -f $MODEL.result
+}
+
+usage()
+{
+	echo "Usage: CONVERT_RESULTS [options] <net-name>"
+	echo "  -p DOUBLE precision"
+	echo "  -r        print results in readable form to stdout"
+	echo "  -h        this help message"
+	exit;
+}
+
+# check arguments
+if [ $# -eq 0 ]; then
+	usage;
+fi
+
+# check environment
+if [ "$TNETHOME" = "" ]; then
+	echo "Environment variable TNETHOME is not set"
+	exit;
+fi
+if [ ! -d "$TNETHOME" ]; then
+	echo "Environment variable TNETHOME is not a directory"
+	exit;
+fi
+if [ "$MODELDIR" = "" ]; then
+	echo "Environment variable MODELDIR is not set"
+	exit;
+fi
+if [ ! -d "$MODELDIR" ]; then
+	echo "Environment variable MODELDIR is not a directory"
+	exit;
+fi
+
+# default
+CONV_FLAGS=""
+NAME="NONE"
+
+
+# check options
+while [ $# -gt 0 ]; do
+	case $1 in
+	-p)	CONV_FLAGS="$CONV_FLAGS -p $2"
+		shift;;
+	-r)	CONV_FLAGS="$CONV_FLAGS -r";;
+	-h|-*)	usage;;
+	*)	NAME="$1";;
+	esac
+
+	shift
+done
+if [ "$NAME" = "NONE" ]; then
+	echo "No model given"
+	exit;
+fi
+
+# set path names
+MAKEFILE="$TNETHOME/Shared/scripts/CONVERT_RESULTS.Make"
+MODEL="$MODELDIR/$NAME"
+
+# check model name
+if [ ! -f "$MODEL.sol" ]; then
+	echo "No such model '$MODEL'"
+	exit;
+fi
+
+# install signal handler
+trap cleanup 0
+
+echo "CALCULATING TOKEN PROBABILITY OF DSPN '$NAME'"
+
+# execute Makefile
+CC=`$TNETHOME/Shared/scripts/CC`
+EXT_LD_FLAGS=`$TNETHOME/Shared/scripts/EXT_LD_FLAGS`
+make -s -f $MAKEFILE MODEL=$MODEL $MODEL.result
+
+# convert results
+$MODEL.result $CONV_FLAGS $MODEL
+echo ""

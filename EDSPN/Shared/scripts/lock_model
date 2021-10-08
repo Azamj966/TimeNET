@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+###############################################################################
+# Program:		LOCK <netname>
+#
+# Purpose:		Lock a model against multiple usage.
+#
+#			The environment variable MODELDIR must point to the
+#			model directory.
+#
+# Programmer:		Kolja Koischwitz
+#
+# History:		Release 1: April 1994
+###############################################################################
+
+NAME=$1
+LOCK=${MODELDIR}/$NAME.lock
+
+if [ -f $LOCK ]; then
+	echo "Model '$NAME' is currently locked, waiting for release ..."
+fi
+while [ -f $LOCK ]; do
+	echo -n .
+	sleep 1
+done
+echo ""
+
+echo "Locking model '$NAME'"
+echo "" > $LOCK

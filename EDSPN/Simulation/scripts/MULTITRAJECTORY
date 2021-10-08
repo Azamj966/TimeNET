@@ -1,0 +1,233 @@
+#!/usr/bin/env bash
+###############################################################################
+#Script   	 :	MULTITRAJECTORY
+#
+#Purpose	 : 	Run Multitrajectory Simulation
+#
+#Programmer	 :	Andres Canabal
+#
+#History	 :	May 2015
+#
+###############################################################################
+
+#export MODELDIR=$MODELDIR
+#export TNETHOME=$TNETHOME
+
+usage="Usage : MULTITRAJECTORY_win model <conf.level> <epsilon> <seed> <max.samples> <max.model time> <max.real time> -{DelTrue|DelFalse} -{IniTranStrict|IniTranModerate|IniTranLight} <min.particle.weight (1e-VAL, 0=>DBL_MIN)> <max.particle.count (1eVAL)> -{SortNo|SortHDif|SortLDif|SortHDev|SortLDev|SortHVar|SortLVar} -{SplitAlways|SplitTrLessAvrg|SplitSelective}"
+
+
+#input netname
+if [ $# -lt 1 ]; then
+  echo $usage
+  exit 1
+fi
+if [ $# -eq 1 ]; then
+ if [ "$1" = "-h" -o "$1" = "-help" ]; then
+  echo $usage
+  exit 1
+ fi
+fi
+
+
+
+# check environment
+if [ "$TNETHOME" = "" ]; then
+	echo "Environment variable TNETHOME is not set"
+	exit
+fi
+if [ ! -d "$TNETHOME" ]; then
+	echo "Environment variable TNETHOME is not a directory"
+	exit
+fi
+if [ "$MODELDIR" = "" ]; then
+	echo "Environment variable MODELDIR is not set"
+	exit
+fi
+if [ ! -d "$MODELDIR" ]; then
+	echo "Environment variable MODELDIR is not a directory"
+	exit
+fi
+
+
+NAME=$1
+MODEL="$MODELDIR/$NAME"
+NET="$MODELDIR/$NAME"
+
+# check net
+if [ ! -e "$MODEL.TN" ];  then
+     # if only xml-file exists, use xml2tn exporter to create TN-file
+     if [ -e "$MODEL.xml" ];  then
+        cd "${TNETHOME}/EDSPNGen"
+        ./xml2tn.sh "$MODEL.xml"
+        cd $currentdir
+     else
+        echo "No such net"
+        echo
+        exit -1
+     fi
+fi
+
+
+## SIMULATE parameters
+## call SIMULATE $NAME $distr $method $trans $level $errPercent $epsilon $seed $maxsamples $min_firings $maxtime $max_execution_time $del_files
+
+
+distr="-S"
+method="-MT"
+trans=-Toff
+
+if [ $# -ge 2 ]; then
+        level=$2
+else
+        level="95";
+fi
+
+errPercent=0
+
+if [ $# -ge 3 ]; then
+        epsilon=$3
+else
+        epsilon="10";
+fi
+
+if [ $# -ge 4 ]; then
+        seed=$4
+else
+        seed="12345";
+fi
+
+if [ $# -ge 5 ]; then
+        maxsamples=$5
+else
+        maxsamples="0";
+fi
+
+min_firings=0
+
+if [ $# -ge 6 ]; then
+        maxtime=$6
+else
+        maxtime="0.0";
+fi
+
+if [ $# -ge 7 ]; then
+        max_execution_time=$7
+else
+        max_execution_time="0.0";
+fi
+
+if [ $# -ge 8 ]; then
+        del_files=$8
+else
+        del_files="-DelTrue";
+fi
+
+## MT PARAMETERS
+
+if [ $# -ge 9 ]; then
+        ini_tran=$9
+else
+        ini_tran="-IniTranModerate";
+fi
+
+if [ $# -ge 10 ]; then
+        min_part_weight=${10}
+else
+        min_part_weight="0";
+fi
+
+if [ $# -ge 11 ]; then
+        max_part_count=${11}
+else
+        max_part_count="5";
+fi
+
+if [ $# -ge 12 ]; then
+        sort=${12}
+else
+        sort="-SortNo";
+fi
+
+if [ $# -ge 13 ]; then
+        split=${13}
+else
+        split="-SplitAlways";
+fi
+
+MT_PARAM=${NET}_mt.param
+\rm -f "$MT_PARAM"
+
+case $ini_tran in
+  -IniTranStrict)
+	   echo 0 >> $MT_PARAM
+	   ;;
+  -IniTranModerate)
+	   echo 1 >> $MT_PARAM
+	   ;;
+  -IniTranLight)
+	   echo 2 >> $MT_PARAM
+	   ;;
+  *)
+	   echo $usage
+	   exit 1
+esac
+
+echo $min_part_weight >> $MT_PARAM
+echo $max_part_count >> $MT_PARAM
+
+case $sort in
+  -SortNo)
+	   echo 0 >> $MT_PARAM
+	   ;;
+  -SortHDif)
+	   echo 1 >> $MT_PARAM
+	   ;;
+  -SortLDif)
+	   echo 2 >> $MT_PARAM
+	   ;;
+  -SortHDev)
+	   echo 3 >> $MT_PARAM
+	   ;;
+  -SortLDev)
+	   echo 4 >> $MT_PARAM
+	   ;;
+  -SortHVar)
+	   echo 5 >> $MT_PARAM
+	   ;;
+  -SortLVar)
+	   echo 6 >> $MT_PARAM
+	   ;;
+  *)
+	   echo $usage
+	   exit 1
+esac
+
+case $split in
+  -SplitAlways)
+	   echo 0 >> $MT_PARAM
+	   ;;
+  -SplitTrLessAvrg)
+	   echo 1 >> $MT_PARAM
+	   ;;
+  -SplitSelective)
+	   echo 2 >> $MT_PARAM
+	   ;;
+  *)
+	   echo $usage
+	   exit 1
+esac
+
+
+$TNETHOME/EDSPN/Simulation/scripts/SIMULATE $NAME $distr $method $trans $level $errPercent $epsilon $seed $maxsamples $min_firings $maxtime $max_execution_time $del_files
+
+mkdir -p "${NET}.dir"
+
+if [ -e "$MT_PARAM" ];  then
+  mv "$MT_PARAM" "${NET}.dir"
+fi
+
+
+
+
+
+

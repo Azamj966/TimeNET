@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+###############################################################################
+# Program:              CLEANUP <netname>
+#
+# Purpose:              Remove unwanted files from the model directory.
+#                       Just leaves the .TN and .PROBTOK/.RESULT files.
+#
+# Project Director:     Reinhard German
+#
+# Programmer:           Ulrich Hertlein
+#
+# History:              Release 1: August 17, 1994
+###############################################################################
+
+NAME=$1
+MODEL=${MODELDIR}/$NAME
+
+echo "CLEANING MODEL '$NAME' ..."
+
+rm -f ${MODEL}.LOG
+
+# remove output from proc_MDF
+rm -f $MODEL.DEFINFO ${MODEL}_MDF.c ${MODEL}_ERC.c
+
+# remove output from struct
+rm -f $MODEL.AUX $MODEL.ECS $MODEL.INV $MODEL.STRUCT
+
+# remove output from exec_erand/erand/solve_LGS
+rm -f $MODEL.CONV* $MODEL.EMC* $MODEL.PROBMARK
+
+# remove output from GENERATE_RRG
+rm -f $MODEL.genrrg
+rm -f $MODEL.rrg $MODEL.pmf $MODEL.tmark $MODEL.sol $MODEL.map
+
+# remove output from genxrg
+rm -f $MODEL.opt $MODEL.som $MODEL.xopt $MODEL.xrg $MODEL.xsol
+
+# remove output from DSPNAnalysis
+rm -f $MODEL.RATES $MODEL.RG $MODEL.graph $MODEL.gst
+
+# unlock model
+$TNETHOME/Shared/scripts/unlock_model $NAME

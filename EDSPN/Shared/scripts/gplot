@@ -1,0 +1,8 @@
+#!/usr/bin/env csh
+#
+which gnuplot >& /dev/null
+if ($status == 0) then
+   gnuplot $* 
+else 
+   echo "gnuplot not found."
+endif

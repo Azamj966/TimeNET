@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+###############################################################################
+# Program:		UNLOCK <netname>
+#
+# Purpose:		Remove lock-file.
+#
+#			The environment variable MODELDIR must point to the
+#			model directory.
+#
+# Programmer:		Kolja Koischwitz
+#
+# History:		Release 1: April 1994
+###############################################################################
+
+NAME=$1
+LOCK=${MODELDIR}/$NAME.lock
+
+if [ -f $LOCK ]; then
+	echo "Releasing lock for '$NAME'"
+	rm -f $LOCK
+fi

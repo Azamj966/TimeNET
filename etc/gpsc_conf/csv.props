@@ -1,0 +1,37 @@
+
+# Adaptor adaptor - Component Names 
+adaptor.Component1.Name = C1
+#adaptor.Component3.Name = C3
+adaptor.Component2.Name = C2
+
+# Adaptor adaptor - Component Classes 
+adaptor.C1.ClassName = org.openadaptor.adaptor.standard.FileSource
+adaptor.C2.ClassName = org.openadaptor.adaptor.standard.FileSink
+
+# Adaptor adaptor - Component Links 
+adaptor.C1.LinkTo1 = C2
+
+# Adaptor adaptor - Component C1 FileSource 
+adaptor.C1.DOStringReader = org.openadaptor.dostrings.DelimitedStringReader
+adaptor.C1.IgnoreHeaderLines = 1
+adaptor.C1.InputFileName = table.csv
+
+# Adaptor adaptor - Component C1 DelimitedStringReader 
+adaptor.C1.BatchSize = 0
+adaptor.C1.FieldDelimiter = 59
+
+# Type Definition must be updated
+adaptor.C1.Type1 = loop
+adaptor.C1.loop.AttName1 = a
+adaptor.C1.loop.AttName2 = b
+adaptor.C1.loop.AttName3 = c
+
+# Adaptor adaptor - Component C2 FileSink 
+adaptor.C2.CreateOutputFile = true
+adaptor.C2.DOStringWriter = org.openadaptor.dostrings.XMLStringWriter
+adaptor.C2.OutputFileName = warehouse.xml
+adaptor.C2.WriteEmptyObjects = true
+adaptor.C2.WriteEmptyAttributes = true
+adaptor.C2.WriteBatchAsRecord = true
+adaptor.C2.PacketName = data
+adaptor.C2.PacketSize = 0

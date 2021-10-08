@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+"${TNETHOME}/Automata_StatAnalysis/bin/AutomataStatAnalysis" "$ANALYSISTYPE" "$NETNAME" "$MODELDIR"
+
+
+mkdir -p "${NETNAME}.dir"
+
+if [ -e "${NETNAME}.SSP" ];  then
+   mv "${NETNAME}.SSP" "${NETNAME}.dir"
+fi

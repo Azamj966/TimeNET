@@ -1,0 +1,297 @@
+#!/usr/bin/env bash
+###############################################################################
+#Script          :      SIM_TRAN
+#
+#Purpose         :      Starten der transienten Simulation
+#
+#Programmer      :      Clemens Tirsch
+#
+#History         :      2009
+#
+###############################################################################
+
+#export MODELDIR=$MODELDIR
+#export TNETHOME=$TNETHOME
+
+distr="null"
+distr_string="null"
+method="null"
+trans="null"
+rule="null"
+rule_string="null"
+transient_time="null"
+no_sampling_points="null"
+maxsamples="null"
+maxtime="null"
+max_execution_time="null"
+algo_no="null"
+start="null"
+cvs_dat="null"
+nice=4
+Init=0
+Req=1000
+
+#############################################################################
+# clear files                 
+#############################################################################
+function clearfiles
+{ 
+  \rm  -f $MODEL'_ERC.c'
+  \rm  -f $MODEL'_RDY.c'
+  \rm  -f $MODEL'_MDF.c'
+  \rm  -f $MODEL'_ERC.o'
+  \rm  -f $MODEL'_RDY.o'
+  \rm -f $MODEL'_MDF.o'
+  \rm -f $MODEL'.DEFINFO'
+  \rm -f $MODEL'_master'
+  \rm -f $MODEL'_slave'
+  \rm -f $MODEL'.sim_curves'
+  \rm -f $MODEL'.temp_sim_curves'
+  \rm -f $MODEL'.dir/'$cvs_dat
+  # $unlock_model "$NAME"
+
+  mkdir -p "$MODEL.dir"
+
+  if [ -e "${MODEL}.pid" ];  then
+    mv "$MODEL.pid" "$MODEL.dir"
+  fi
+  if [ -e "${MODEL}.RESULTS" ];  then
+    mv "$MODEL.RESULTS" "$MODEL.dir"
+  fi
+  if [ -e "${MODEL}.STAT_OUT" ];  then
+    mv "$MODEL.STAT_OUT" "$MODEL.dir"
+  fi
+  if [ -e "${MODEL}.TN" ];  then
+    mv "$MODEL.TN" "$MODEL.dir"
+  fi
+}
+
+
+usage="Usage : SIM_TRAN model -{D|S} -{Pon|Poff} <transient_time> <no_sampling_points> <conf.level> <epsilon> <seed> <max.real time>"
+
+#input netname
+if [ $# -lt 1 ]; then
+	echo $usage
+  exit 1
+fi
+if [ $# -eq 1 ]; then
+ if [ "$1" = "-h" -o "$1" = "-help" ]; then
+    echo $usage
+    exit 1
+ fi
+fi
+
+# check environment
+if [ "$TNETHOME" = "" ]; then
+	echo "Environment variable TNETHOME is not set"
+	exit
+fi
+if [ ! -d "$TNETHOME" ]; then
+	echo "Environment variable TNETHOME is not a directory"
+	exit
+fi
+if [ "$MODELDIR" = "" ]; then
+	echo "Environment variable MODELDIR is not set"
+	exit
+fi
+if [ ! -d "$MODELDIR" ]; then
+	echo "Environment variable MODELDIR is not a directory"
+	exit
+fi
+
+# set path names
+BIN_DIR=${TNETHOME}/EDSPN/Simulation/bin
+SIM_DIR=${TNETHOME}/EDSPN/Simulation
+SHARED_BIN_DIR=${TNETHOME}/EDSPN/Shared/bin
+NAME=$1
+MODEL="$MODELDIR/$NAME"
+
+# check net
+if [ ! -e "$MODEL.TN" ];  then
+     # if only xml-file exists, use xml2tn exporter to create TN-file
+     if [ -e "$MODEL.xml" ];  then
+        cd "${TNETHOME}/EDSPNGen"
+        ./xml2tn.sh "$MODEL.xml"
+        cd $currentdir
+     else
+        echo "No such net"
+        echo
+        exit -1
+     fi
+fi
+
+if [ $# -ge 2 ]; then
+  distr=$2
+else
+  distr="-D";
+fi
+
+if [ $# -ge 3 ]; then
+	rule=$3
+else
+	rule="-Pon";
+fi
+
+if [ $# -ge 4 ]; then
+	transient_time=$4
+else
+	transient_time="10.0";
+fi
+
+if [ $# -ge 5 ]; then
+	no_sampling_points=$5
+else
+	no_sampling_points="10";
+fi
+
+if [ $# -ge 6 ]; then
+	level=$6
+else
+	level="95";
+fi
+
+if [ $# -ge 7 ]; then
+	epsilon=$7
+else
+	epsilon="10";
+fi
+
+if [ $# -ge 8 ]; then
+	seed=$8
+else
+	seed="12345";
+fi
+
+
+if [ $# -ge 9 ]; then
+	max_execution_time=$9
+else
+	max_execution_time="0.0";
+fi
+
+shift
+
+if [ $# -ge 9 ]; then
+	cvs_dat=$9
+else
+	cvs_dat="null";
+fi
+
+shift
+
+if [ $# -ge 9 ]; then
+	algo_no=$9
+else
+	algo_no=1;
+fi
+
+shift
+
+if [ $# -ge 9 ]; then
+	start=$9
+else
+	start=-20.0;
+fi
+
+shift
+
+if [ $# -ge 9 ]; then
+	Init=$9
+else
+	Init=0;
+fi
+
+shift
+
+if [ $# -ge 9 ]; then
+	Req=$9
+else
+	Req=1000;
+fi
+
+
+
+#Voreinstellungen
+trans="Toff"
+method="-STR"
+#Dummy-Variablen
+maxsamples="0";
+maxtime="0.0";
+
+case $distr in
+  -S)
+	   distr_string="Sequential "
+	   distr="S"
+	   ;;
+  -D)
+	   distr_string="Parallel "
+	   distr="D"
+	   ;;
+  *)
+	   echo $usage
+	   exit 1
+     ;;
+esac
+
+case $rule in
+  -Pon)
+	   rule_string="on."
+	   rule="Pon"
+	   ;;
+  -Poff)
+	   rule_string="off."
+	   rule="Poff"
+	   ;;
+  *)
+	   echo $usage
+	   exit 1
+esac
+
+# $lock_model $NAME
+
+echo $distr_string" transient Simulation of net:" 
+echo "$MODEL"
+echo "Percentage-rule is "$rule_string
+
+#############################################################################
+# marking dependencies, definition of rewardmeasures
+#
+# execute 'proc_TN'
+#############################################################################
+"${SHARED_BIN_DIR}/proc_tn" -s "$NAME"
+if [ $? -ne 0 ]; then
+  echo
+  echo ERROR STATE $STATUS occurred while PROC_TN execution.
+  # $unlock_model $NAME
+  echo SOLUTION OF MODEL $NAME FAILED.
+  echo
+  clearfiles
+  exit -1
+fi
+# echo "proc_tn done."
+
+
+gcc -I"${SIM_DIR}/include" -I"${SIM_DIR}/sim_utils/include" -O -c -o "${MODEL}_MDF.o" "${MODEL}_MDF.c"
+gcc -I"${SIM_DIR}/include" -I"${SIM_DIR}/sim_utils/include" -O -c -o "${MODEL}_ERC.o" "${MODEL}_ERC.c"
+gcc -I"${SIM_DIR}/include" -I"${SIM_DIR}/sim_utils/include" -O -c -o "${MODEL}_RDY.o" "${MODEL}_RDY.c"
+
+gcc -o "${MODEL}_slave" "${MODEL}_MDF.o" "${MODEL}_ERC.o" "${BIN_DIR}/libSim_IN_Trans_Slave_lnx.a" -L"${BIN_DIR}" -lsim_utils_lnx -L"${SHARED_BIN_DIR}" -lsysdep_lnx -lnetio_lnx -lm
+gcc -o "${MODEL}_master" "${MODEL}_RDY.o" "${BIN_DIR}/libSim_IN_Trans_Master_lnx.a" -L"${BIN_DIR}" -lsim_utils_lnx -L"${SHARED_BIN_DIR}" -lsysdep_lnx -lnetio_lnx -lm
+
+if [ ! -e "${MODEL}_master" -o ! -e "${MODEL}_slave" ]; then
+   echo "Could not build the simulator, for errors see above."
+   # $unlock_model $NAME
+   clearfiles
+   exit 1
+fi
+
+"${MODEL}_master" "$NAME" $level $epsilon $seed $maxsamples $maxtime $max_execution_time $distr $trans $transient_time $no_sampling_points $rule $cvs_dat $algo_no $start $Init $Req
+if [ $? -ne 0 ]; then
+   echo "could not finish main simulation"
+   clearfiles
+   exit 1
+fi
+
+clearfiles
+
+ 

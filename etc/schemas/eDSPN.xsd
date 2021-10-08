@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema attributeFormDefault="unqualified"
+  elementFormDefault="qualified"
+  targetNamespace="http://timenet.tu-ilmenau.de/schema/eDSPN"
+  xmlns="http://timenet.tu-ilmenau.de/schema/eDSPN" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <xsd:include schemaLocation="builtin/net-objects.xsd"/>
+  <xsd:element name="net" type="eDSPNNet"/>
+
+  <xsd:complexType name="eDSPNNet">
+    <xsd:complexContent>
+      <xsd:extension base="NetType">
+        <xsd:sequence>
+          <!-- NodeTypes -->
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="place" type="PlaceType"/>
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="exponentialTransition" type="ExponentialTransitionType"/>
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="immediateTransition" type="ImmediateTransitionType"/>
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="deterministicTransition" type="DeterministicTransitionType"/>
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="generalTransition" type="GeneralTransitionType"/>
+          <!-- ConnectorTypes -->
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="arc" type="ArcType"/>
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="inhibit" type="InhibitType"/>
+          <!-- TextTypes -->
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="measure" type="MeasureType"/>
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="definition" type="DefinitionType"/>
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="comment" type="CommentType" />
+        </xsd:sequence>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="TransitionType">
+    <xsd:complexContent>
+      <xsd:extension base="NodeType">
+        <xsd:sequence>
+          <xsd:element maxOccurs="1" minOccurs="1" name="label" type="LabelType"/>
+        </xsd:sequence>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="ExponentialTransitionType">
+    <xsd:complexContent>
+      <xsd:extension base="TransitionType">
+        <xsd:attribute default="1.0" name="delay" type="xsd:string"/>
+        <xsd:attribute name="serverType" default="ExclusiveServer" type="ServerTypeType"/>
+        <xsd:attribute name="preemptionPolicy" default="PRD" type="PreemptionPolicyType"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="ImmediateTransitionType">
+    <xsd:complexContent>
+      <xsd:extension base="TransitionType">
+        <xsd:attribute name="priority" default="1" type="xsd:string"/>
+        <xsd:attribute name="weight" default="1" type="xsd:string"/>
+        <xsd:attribute name="enablingFunction" default="" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="DeterministicTransitionType">
+    <xsd:complexContent>
+      <xsd:extension base="TransitionType">
+        <xsd:attribute default="1.0" name="delay" type="xsd:string"/>
+        <xsd:attribute name="preemptionPolicy" default="PRD" type="PreemptionPolicyType"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="GeneralTransitionType">
+    <xsd:complexContent>
+      <xsd:extension base="TransitionType">
+        <xsd:attribute default="UNIFORM(0.0,1.0);" name="delay" type="xsd:string"/>
+        <xsd:attribute name="preemptionPolicy" default="PRD" type="PreemptionPolicyType"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="PlaceType">
+    <xsd:complexContent>
+      <xsd:extension base="NodeType">
+        <xsd:sequence>
+          <xsd:element maxOccurs="1" minOccurs="1" name="label" type="LabelType"/>
+        </xsd:sequence>
+	      <xsd:attribute default="0" name="initialMarking" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="ArcType">
+    <xsd:complexContent>
+      <xsd:extension base="ConnectorType">
+        <xsd:sequence>
+          <xsd:element maxOccurs="1" minOccurs="1" name="inscription" type="InscriptionType"/>
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="handle" type="HandleType"/>
+        </xsd:sequence>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="InhibitType">
+    <xsd:complexContent>
+      <xsd:extension base="ConnectorType">
+        <xsd:sequence>
+          <xsd:element maxOccurs="1" minOccurs="1" name="inscription" type="InscriptionType"/>
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="handle" type="HandleType"/>
+        </xsd:sequence>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="InscriptionType">
+    <xsd:complexContent>
+      <xsd:extension base="InscriptionTextType">
+        <xsd:attribute default="1" name="text" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="LabelType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+        <xsd:attribute default="" name="text" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="MeasureType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+        <xsd:sequence>
+          <xsd:element maxOccurs="1" minOccurs="0" name="additionalData" type="AddDataType"/>
+        </xsd:sequence>
+        <xsd:attribute name="name" type="xsd:string" use="required"/>
+        <xsd:attribute name="expression" type="xsd:string" use="required"/>
+        <xsd:attribute name="result" default="" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="DefinitionType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+        <xsd:sequence>
+          <xsd:element maxOccurs="1" minOccurs="0" name="additionalData" type="AddDataType"/>
+        </xsd:sequence>
+        <xsd:attribute name="defType" default="int" type="DefTypeType"/>
+        <xsd:attribute name="name" type="xsd:string" use="required"/>
+        <xsd:attribute name="expression" type="xsd:string" use="required"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:simpleType name="ServerTypeType">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="InfiniteServer"/>
+      <xsd:enumeration value="ExclusiveServer"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="PreemptionPolicyType">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="PRD"/>
+      <xsd:enumeration value="PRS"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="BooleanType">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="true"/>
+      <xsd:enumeration value="false"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="DefTypeType">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="int"/>
+      <xsd:enumeration value="real"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+
+  <xsd:complexType name="AddDataType">
+    <xsd:attribute name="classname" type="xsd:string" use="required"/>
+  </xsd:complexType>
+
+  <xsd:complexType name="CommentType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+        <xsd:attribute name="commentText" type="xsd:normalizedString" use="required"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  
+</xsd:schema>

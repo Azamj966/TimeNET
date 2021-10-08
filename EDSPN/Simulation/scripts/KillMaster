@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+echo Terminate the Simulation ..
+
+foundAlready=0
+
+\ps -a |
+\nawk '
+/_master/{
+		if( foundAlready==0 )
+		{
+		  h="\kill "$1
+		  printf("found Master: %s\n",h)
+		  system(h)
+		  foundAlready=1
+		}
+	}
+'
+#echo  .. Master has been killed
+
+
+
+
+
+
+

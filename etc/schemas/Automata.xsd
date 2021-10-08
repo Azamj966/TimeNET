@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema attributeFormDefault="unqualified"
+  elementFormDefault="qualified"
+  targetNamespace="http://timenet.tu-ilmenau.de/schema/Automata"
+  xmlns="http://timenet.tu-ilmenau.de/schema/Automata" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <xsd:include schemaLocation="builtin/net-objects.xsd"/>
+  <xsd:element name="net" type="AutomataNet"/>
+
+  <xsd:complexType name="AutomataNet">
+    <xsd:complexContent>
+      <xsd:extension base="NetType">
+        <xsd:sequence>
+          <!-- NodeTypes -->
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="place" type="PlaceType"/>
+          <!-- ConnectorTypes -->
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="arc" type="ArcType"/>
+          <!--<xsd:element maxOccurs="unbounded" minOccurs="0" name="arcu" type="ArcTypeUp"/>-->
+          <!--<xsd:element maxOccurs="unbounded" minOccurs="0" name="arcd" type="ArcTypeDown"/>-->
+          <!--<xsd:element maxOccurs="unbounded" minOccurs="0" name="arcself" type="ArcTypeSelf"/>-->
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="initialState" type="InitialStateType"/>
+          <!-- TextTypes -->
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="measure" type="MeasureType"/>
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="definition" type="DefinitionType"/>
+        </xsd:sequence>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <!--kartic-->
+  <xsd:complexType name="InitialStateType">
+    <xsd:complexContent>
+      <xsd:extension base="PseudoStateType"></xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <xsd:complexType name="StateVertexType">
+    <xsd:complexContent>
+      <xsd:extension base="NodeType"></xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <xsd:complexType name="PseudoStateType">
+    <xsd:complexContent>
+      <xsd:extension base="StateVertexType"></xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  
+  <!--kartic-->
+ <xsd:complexType name="PlaceType">
+    <xsd:complexContent>
+      <xsd:extension base="NodeType">
+        <xsd:sequence>
+          <xsd:element maxOccurs="1" minOccurs="1" name="label" type="LabelType"/>
+        </xsd:sequence>
+	  <!--<xsd:attribute default="0" name="StateDescription" type="xsd:string"/>-->
+        <xsd:attribute default="false" name="InitialState" type="xsd:boolean"/>
+          <!--<xsd:attribute default="0" name="SelfEventDesc" type="xsd:string"/>-->
+	<xsd:attribute default="-" name="stationaryStateProbabilities" type="xsd:string"/>
+          <!--<xsd:attribute default="0" name="MarkedState" type="xsd:string"/>-->
+        
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="ArcType">
+    <xsd:complexContent>
+      <xsd:extension base="ConnectorType">
+        <xsd:sequence>
+          <xsd:element maxOccurs="1" minOccurs="1" name="inscription" type="InscriptionType"/>
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="handle" type="HandleType"/>
+          <!--<xsd:element maxOccurs="1" minOccurs="1" name="eventName" type="InscriptionType"/>-->
+          
+        </xsd:sequence>
+        <!--<xsd:attribute name="Event" type="xsd:string" use="required"/>-->
+        <xsd:attribute default="1" name="TransitionRate" type="xsd:string" />
+        
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <!--<xsd:complexType name="ArcTypeSelf">
+    <xsd:complexContent>
+      <xsd:extension base="ConnectorType">
+        <xsd:sequence>
+          <xsd:element maxOccurs="1" minOccurs="1" name="inscription" type="InscriptionType"/>
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="handle" type="HandleType"/>
+          --><!--<xsd:element minOccurs="1" maxOccurs="1" name="TransitionRate" type="LabelType" ></xsd:element>--><!--
+         
+          
+        </xsd:sequence>
+
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>-->
+
+  <!--<xsd:complexType name="ArcTypeUp">
+    <xsd:complexContent>
+      <xsd:extension base="ConnectorType">
+        <xsd:sequence>
+          <xsd:element maxOccurs="1" minOccurs="1" name="inscription" type="InscriptionType"/>
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="handle" type="HandleType"/>
+          <xsd:element minOccurs="1" maxOccurs="1" name="TransitionRate" type="LabelType1" ></xsd:element>
+        </xsd:sequence>
+
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>-->
+  <!--<xsd:complexType name="ArcTypeDown">
+    <xsd:complexContent>
+      <xsd:extension base="ConnectorType">
+        <xsd:sequence>
+          <xsd:element maxOccurs="1" minOccurs="1" name="inscription" type="InscriptionType"/>
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="handle" type="HandleType"/>
+          <xsd:element minOccurs="1" maxOccurs="1" name="TransitionRate" type="LabelType1" ></xsd:element>
+        </xsd:sequence>
+
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>-->
+
+  <xsd:complexType name="InscriptionType">
+    <xsd:complexContent>
+      <xsd:extension base="InscriptionTextType">
+          <xsd:attribute name="text" type="xsd:string" use="required"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="LabelType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+        <xsd:attribute default="" name="text" type="xsd:string" />
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <xsd:complexType name="LabelType1">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+        <xsd:attribute name="text" type="xsd:string" use="required" />
+        
+        <!--<xsd:attribute name ="TransitionRate" type="xsd:string" use="required"/>-->
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <xsd:complexType name="MeasureType">
+    <xsd:complexContent>
+        <xsd:extension base="TextType">
+        <xsd:sequence>
+          <xsd:element maxOccurs="1" minOccurs="0" name="additionalData" type="AddDataType"/>
+        </xsd:sequence>
+        <xsd:attribute name="name" type="xsd:string" use="required"/>
+        <xsd:attribute name="expression" type="xsd:string" use="required"/>
+        <xsd:attribute name="result" default="" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="DefinitionType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+        <xsd:sequence>
+          <xsd:element maxOccurs="1" minOccurs="0" name="additionalData" type="AddDataType"/>
+        </xsd:sequence>
+        <!--<xsd:attribute name="defType" default="int" type="DefTypeType"/>-->
+        <xsd:attribute name="name" type="xsd:string" use="required"/>
+        <xsd:attribute name="expression" type="xsd:string" use="required"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:simpleType name="ServerTypeType">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="InfiniteServer"/>
+      <xsd:enumeration value="ExclusiveServer"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="PreemptionPolicyType">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="PRD"/>
+      <xsd:enumeration value="PRS"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="BooleanType">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="true"/>
+      <xsd:enumeration value="false"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="DefTypeType">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="int"/>
+      <xsd:enumeration value="real"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+
+  <xsd:complexType name="AddDataType">
+    <xsd:attribute name="classname" type="xsd:string" use="required"/>
+  </xsd:complexType>
+
+</xsd:schema>

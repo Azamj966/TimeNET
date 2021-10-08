@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+###############################################################################
+#Script   	 :	MSOLVE
+#
+#Purpose	 : 	Ausf"uhrung eines Experimentes
+#
+#Project Director:	Christoph Lindemann TU Berlin
+#
+#Programmer	 :	Martin M"uller, Christian L"uhe
+#
+#History	 :	release 1: October 1992
+#                       
+#                       release 2: June    1995 (Patrick Drescher)
+#                 
+#                       release 3: April   1998 (Ken Schwiersch)
+#                                  
+#                       release 4: July    1999 (Philipp Berndt)
+#                                  
+###############################################################################
+
+echo Starting experiment with args \"$*\"
+"$TNETHOME/StatAnalysis/bin/msolve" $*

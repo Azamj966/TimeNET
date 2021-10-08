@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema attributeFormDefault="unqualified"
+  blockDefault="restriction" elementFormDefault="qualified" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <xsd:simpleType name="Type">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="node"/>
+      <xsd:enumeration value="connector"/>
+      <xsd:enumeration value="text"/>
+      <xsd:enumeration value="inscriptionText"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:complexType name="NetType">
+    <xsd:attribute name="id" type="xsd:string" use="required"/>
+    <xsd:attribute name="gridActive" type="xsd:boolean" use="optional" default="true"/>
+    <xsd:attribute name="sharpEdges" type="xsd:boolean" use="optional" default="false"/>
+    <xsd:attribute name="netclass" type="xsd:string" use="required"/>
+  </xsd:complexType>
+  <xsd:complexType name="NodeType">
+    <xsd:sequence>
+      <xsd:element name="graphics" type="GraphicsType"/>
+    </xsd:sequence>
+    <xsd:attribute name="id" type="xsd:string" use="required"/>
+    <xsd:attribute fixed="node" name="type" type="Type" use="required"/>
+  </xsd:complexType>
+  <xsd:complexType name="HandleType">
+    <xsd:sequence>
+      <xsd:element name="graphics" type="GraphicsType"/>
+    </xsd:sequence>
+    <xsd:attribute name="id" type="xsd:string" use="required"/>
+  </xsd:complexType>
+  <xsd:complexType name="ConnectorType">
+    <xsd:attribute name="fromNode" type="xsd:string" use="required"/>
+    <xsd:attribute name="toNode" type="xsd:string" use="required"/>
+    <xsd:attribute name="id" type="xsd:string" use="required"/>
+    <xsd:attribute fixed="connector" name="type" type="Type" use="required"/>
+  </xsd:complexType>
+  <xsd:complexType name="TextType">
+    <xsd:sequence>
+      <xsd:element name="graphics" type="GraphicsType"/>
+    </xsd:sequence>
+    <xsd:attribute fixed="text" name="type" type="Type" use="required"/>
+    <xsd:attribute name="id" type="xsd:string" use="required"/>
+  </xsd:complexType>
+  <xsd:complexType name="InscriptionTextType">
+    <xsd:sequence>
+      <xsd:element name="graphics" type="GraphicsType"/>
+    </xsd:sequence>
+    <xsd:attribute fixed="inscriptionText" name="type" type="Type" use="required"/>
+    <xsd:attribute name="id" type="xsd:string" use="required"/>
+  </xsd:complexType>  
+  <xsd:complexType name="GraphicsType">
+    <xsd:attribute name="x" type="xsd:integer" use="required"/>
+    <xsd:attribute name="y" type="xsd:integer" use="required"/>
+    <xsd:attribute default="0" name="orientation" type="xsd:integer" use="optional"/>
+  </xsd:complexType>
+</xsd:schema>

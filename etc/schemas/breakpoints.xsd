@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema attributeFormDefault="unqualified"
+  elementFormDefault="qualified"
+  targetNamespace="http://timenet.tu-ilmenau.de/schema/breakpoints"
+  xmlns="http://timenet.tu-ilmenau.de/schema/breakpoints"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+  <xsd:element name="breakpoints" type="breakpointsType"/>
+  
+  <xsd:simpleType name="relationValueType">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="&lt;"/>
+      <xsd:enumeration value="&gt;"/>
+      <xsd:enumeration value="&lt;="/>
+      <xsd:enumeration value="&gt;="/>
+      <xsd:enumeration value="="/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  
+  <xsd:complexType name="pointType">
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:string">
+        <xsd:attribute type="xsd:boolean" name="isActive" use="required"/>
+        <xsd:attribute type="xsd:string" name="name" use="required"/>
+        <xsd:attribute type="relationValueType" name="relation" use="required"/>
+        <xsd:attribute type="xsd:nonNegativeInteger" name="value" use="required"/>
+      </xsd:extension>
+    </xsd:simpleContent>
+  </xsd:complexType>
+  
+  <xsd:complexType name="breakpointsType">
+    <xsd:sequence>
+      <xsd:element type="pointType" name="point" maxOccurs="unbounded" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  
+</xsd:schema>

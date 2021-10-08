@@ -1,0 +1,472 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema attributeFormDefault="unqualified"
+  elementFormDefault="qualified"
+  targetNamespace="http://timenet.tu-ilmenau.de/schema/sSM"
+  xmlns="http://timenet.tu-ilmenau.de/schema/sSM" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <xsd:include schemaLocation="builtin/net-objects.xsd"/>
+  <xsd:element name="net" type="sSMNet"/>
+  
+  <xsd:complexType name="sSMNet">
+    <xsd:complexContent>
+      <xsd:extension base="NetType">
+        <xsd:sequence>
+          <!-- NodeTypes -->
+	      <xsd:element maxOccurs="unbounded" minOccurs="0" name="stateVertex" type="StateVertexType"/>
+	      <xsd:element maxOccurs="unbounded" minOccurs="0" name="pseudostate" type="PseudoStateType"/>
+	      
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="compositeState" type="CompositeStateType"/>
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="simpleState" type="SimpleStateType"/>
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="finalState" type="FinalStateType"/>
+          
+	      <xsd:element maxOccurs="unbounded" minOccurs="0" name="initialState" type="InitialStateType"/>
+	      <xsd:element maxOccurs="unbounded" minOccurs="0" name="entryPointState" type="EntryPointType"/>
+	      <xsd:element maxOccurs="unbounded" minOccurs="0" name="exitPointState" type="ExitPointType"/>
+	      <xsd:element maxOccurs="unbounded" minOccurs="0" name="terminateState" type="TerminateType"/>
+	      <xsd:element maxOccurs="unbounded" minOccurs="0" name="joinState" type="JoinStateType"/>      
+	      <xsd:element maxOccurs="unbounded" minOccurs="0" name="forkState" type="ForkStateType"/>
+	  <!--      <xsd:element maxOccurs="unbounded" minOccurs="0" name="junctionState" type="JunctionStateType"/> -->
+	      <xsd:element maxOccurs="unbounded" minOccurs="0" name="choiceState" type="ChoiceStateType"/>
+
+          <!-- ConnectorTypes -->
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="transition" type="TransitionType"/>
+
+        </xsd:sequence>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+
+  <xsd:complexType name="SubStateType">
+    <xsd:complexContent>
+      <xsd:extension base="NetType">
+        <xsd:sequence>
+          <!-- NodeTypes -->
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="stateVertex" type="StateVertexType"/>
+	      <xsd:element maxOccurs="unbounded" minOccurs="0" name="pseudostate" type="PseudoStateType"/>
+	      
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="compositeState" type="CompositeStateType"/>
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="simpleState" type="SimpleStateType"/>
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="finalState" type="FinalStateType"/>
+          
+	      <xsd:element maxOccurs="unbounded" minOccurs="0" name="initialState" type="InitialStateType"/>
+	      <xsd:element maxOccurs="unbounded" minOccurs="0" name="entryPointState" type="EntryPointType"/>
+	      <xsd:element maxOccurs="unbounded" minOccurs="0" name="exitPointState" type="ExitPointType"/>
+	      <xsd:element maxOccurs="unbounded" minOccurs="0" name="terminateState" type="TerminateType"/>
+	      <xsd:element maxOccurs="unbounded" minOccurs="0" name="joinState" type="JoinStateType"/>
+	      <xsd:element maxOccurs="unbounded" minOccurs="0" name="forkState" type="ForkStateType"/>
+	      <xsd:element maxOccurs="unbounded" minOccurs="0" name="junctionState" type="JunctionStateType"/>
+	      <xsd:element maxOccurs="unbounded" minOccurs="0" name="choiceState" type="ChoiceStateType"/>
+
+          <!-- ConnectorTypes -->
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="transition" type="TransitionType"/>
+        </xsd:sequence>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+
+
+  <xsd:complexType name="StateVertexType">
+    <xsd:complexContent>
+      <xsd:extension base="NodeType">
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  
+  <xsd:complexType name="PseudoStateType">
+    <xsd:complexContent>
+      <xsd:extension base="StateVertexType">
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+
+  <xsd:complexType name="SimpleStateType">
+    <xsd:complexContent>
+      <xsd:extension base="StateVertexType">
+        <xsd:sequence>
+          <xsd:element maxOccurs="1" minOccurs="1" name="label" type="LabelType"/>
+          <xsd:element maxOccurs="1" minOccurs="1" name="doCase" type="DoType"/>
+          <xsd:element maxOccurs="1" minOccurs="1" name="entryCase" type="EntryType"/>
+          <xsd:element maxOccurs="1" minOccurs="1" name="exitCase" type="ExitType"/>
+        </xsd:sequence>
+        <xsd:attribute default="" name="stereotypes" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+
+  <xsd:complexType name="CompositeStateType">
+    <xsd:complexContent>
+      <xsd:extension base="StateVertexType">
+        <xsd:sequence>
+	  <xsd:element maxOccurs="1" minOccurs="1" name="label" type="LabelType"/>
+	  <xsd:element maxOccurs="1" minOccurs="1" name="entryCase" type="EntryType"/>
+          <xsd:element maxOccurs="1" minOccurs="1" name="exitCase" type="ExitType"/>
+          <xsd:element maxOccurs="10" name="net" type="sSMNet"/>
+        </xsd:sequence>
+        <xsd:attribute default="1" name="numberOfRegions" type="xsd:integer"/>
+        <xsd:attribute default="" name="stereotypes" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+
+  <xsd:complexType name="FinalStateType">
+    <xsd:complexContent>
+      <xsd:extension base="StateVertexType">
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  
+  
+  <xsd:complexType name="InitialStateType">
+    <xsd:complexContent>
+      <xsd:extension base="PseudoStateType">
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="EntryPointType">
+    <xsd:complexContent>
+      <xsd:extension base="PseudoStateType">
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="ExitPointType">
+    <xsd:complexContent>
+      <xsd:extension base="PseudoStateType">
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="TerminateType">
+    <xsd:complexContent>
+      <xsd:extension base="PseudoStateType">
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="JoinStateType">
+    <xsd:complexContent>
+      <xsd:extension base="PseudoStateType">
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  
+  <xsd:complexType name="ForkStateType">
+    <xsd:complexContent>
+      <xsd:extension base="PseudoStateType">
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  
+  <xsd:complexType name="JunctionStateType">
+    <xsd:complexContent>
+      <xsd:extension base="PseudoStateType">
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  
+  <xsd:complexType name="ChoiceStateType">
+    <xsd:complexContent>
+      <xsd:extension base="PseudoStateType">
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  
+
+  <xsd:complexType name="TransitionType">
+    <xsd:complexContent>
+      <xsd:extension base="ConnectorType">
+        <xsd:sequence>
+          <xsd:element maxOccurs="1" minOccurs="1" name="inscription" type="InscriptionType"/>
+          <xsd:element maxOccurs="unbounded" minOccurs="0" name="handle" type="HandleType"/>
+        </xsd:sequence>
+        <xsd:attribute default="" name="precondition" type="xsd:string"/>
+        <xsd:attribute default="" name="event" type="xsd:string"/>
+        <xsd:attribute default="" name="postcondition" type="xsd:string"/>
+	<xsd:attribute default="" name="stereotypes" type="xsd:string"/>
+	<xsd:attribute default="true" name="connectsToBorder" type="ConnectsToBorderType"/>
+	<xsd:attribute default="true" name="startsFromBorder" type="ConnectsToBorderType"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  
+  <xsd:simpleType name="ConnectsToBorderType">
+     <xsd:restriction base="xsd:string">
+       <xsd:enumeration value="true"/>
+       <xsd:enumeration value="false"/>
+     </xsd:restriction>
+  </xsd:simpleType>
+
+
+  <xsd:complexType name="InscriptionType">
+    <xsd:complexContent>
+      <xsd:extension base="InscriptionTextType">
+        <xsd:attribute default="" name="text" type="xsd:string"/>
+        <xsd:attribute default="" name="eventStereotypes" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+
+  <xsd:complexType name="LabelType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+	  <xsd:attribute default="" name="text" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="DoType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+	  <xsd:attribute default="Do" name="text" type="xsd:string"/>
+	  <xsd:attribute default="" name="name" type="xsd:string"/>
+	  <xsd:attribute default="" name="stereotypes" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  
+  <xsd:complexType name="EntryType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+	  <xsd:attribute default="Entry" name="text" type="xsd:string"/>
+	  <xsd:attribute default="" name="name" type="xsd:string"/>
+	  <xsd:attribute default="" name="stereotypes" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="ExitType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+	  <xsd:attribute default="Exit" name="text" type="xsd:string"/>
+	  <xsd:attribute default="" name="name" type="xsd:string"/>
+	  <xsd:attribute default="" name="stereotypes" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="UMLStereoTypes">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+	<!--   <xsd:attribute name="RTaction" type="xsd:string"/>			-->
+	<!--   <xsd:attribute name="RTclkInterrupt" type="xsd:string"/>			-->
+	<!--   <xsd:attribute name="RTclock" type="xsd:string"/>			-->
+ 	  <xsd:attribute name="RTdelay" type="xsd:string"/>
+	  <xsd:attribute name="RTevent" type="xsd:string"/>
+	<!--   <xsd:attribute name="RTinterval" type="xsd:string"/>			-->
+	<!--   <xsd:attribute name="RTnewClock" type="xsd:string"/>			-->
+	<!--   <xsd:attribute name="RTnewTimer" type="xsd:string"/>			-->
+	<!--   <xsd:attribute name="RTpause" type="xsd:string"/>			-->
+	<!--   <xsd:attribute name="RTreset" type="xsd:string"/>			-->
+	<!--   <xsd:attribute name="RTset" type="xsd:string"/>				-->
+	<!--   <xsd:attribute name="RTstart" type="xsd:string"/>			-->
+	<!--   <xsd:attribute name="RTstimulus" type="xsd:string"/>			-->
+	<!--   <xsd:attribute name="RTtime" type="xsd:string"/>				-->
+	<!--   <xsd:attribute name="RTtimeout" type="xsd:string"/>			-->
+	<!--   <xsd:attribute name="RTtimer" type="xsd:string"/>			-->
+	<!--   <xsd:attribute name="RTtimeService" type="xsd:string"/>			-->
+	<!--   <xsd:attribute name="RTtimingMechanism" type="xsd:string"/>		-->
+	  <xsd:attribute name="PAstep" type="xsd:string"/>
+	  <xsd:attribute name="PQstate" type="xsd:string"/>
+	  <xsd:attribute name="PQtransition" type="xsd:string"/>
+
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="RTactionType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+	  <xsd:attribute name="RTstart" type="xsd:string"/>
+	  <xsd:attribute name="RTend" type="xsd:string"/>
+	  <xsd:attribute name="RTduration" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+ <xsd:complexType name="RTclkInterruptType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+	  <xsd:attribute name="RTstart" type="xsd:string"/>
+	  <xsd:attribute name="RTend" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="RTclockType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+	  <xsd:attribute name="RTclockId" type="xsd:string"/>
+	  <xsd:attribute name="RTstability" type="xsd:string"/>
+	  <xsd:attribute name="RTdrift" type="xsd:string"/>
+	  <xsd:attribute name="RTskew" type="xsd:string"/>
+      	  <xsd:attribute name="RTmaxValue" type="xsd:string"/>
+      	  <xsd:attribute name="RTorigin" type="xsd:string"/>
+      	  <xsd:attribute name="RTresolution" type="xsd:string"/>
+      	  <xsd:attribute name="RToffset" type="xsd:string"/>
+   	  <xsd:attribute name="RTaccuracy" type="xsd:string"/>
+      	  <xsd:attribute name="RTcurrentVal" type="xsd:string"/>
+      	  <xsd:attribute name="RTrefClk" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="RTdelayType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+	<!--   <xsd:attribute name="RTstart" type="xsd:string"/>			-->
+	<!--  <xsd:attribute name="RTend" type="xsd:string"/>				-->
+	  <xsd:attribute name="RTduration" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="RTeventType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+	  <xsd:attribute name="RTat" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+ <xsd:complexType name="RTintervalType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+	  <xsd:attribute name="RTintStart" type="xsd:string"/>
+	  <xsd:attribute name="RTintEnd" type="xsd:string"/>
+	  <xsd:attribute name="RTintDuration" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="RTnewTimerType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+	  <xsd:attribute name="RTtimerPar" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="RTsetType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+	  <xsd:attribute name="RTtimePar" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="RTstimulusType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+	  <xsd:attribute name="RTstart" type="xsd:string"/>
+	  <xsd:attribute name="RTend" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="RTtimeType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+	  <xsd:attribute name="RTkind" type="xsd:string"/>
+	  <xsd:attribute name="RTrefClk" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="RTtimeoutType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+	  <xsd:attribute name="RTstart" type="xsd:string"/>
+	  <xsd:attribute name="RTend" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="RTtimerType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+	  <xsd:attribute name="RTduration" type="xsd:string"/>
+	  <xsd:attribute name="RTperiodic" type="xsd:string"/>
+	  <xsd:attribute name="RTstability" type="xsd:string"/>
+	  <xsd:attribute name="RTdrift" type="xsd:string"/>
+	  <xsd:attribute name="RTskew" type="xsd:string"/>
+      	  <xsd:attribute name="RTmaxValue" type="xsd:string"/>
+      	  <xsd:attribute name="RTorigin" type="xsd:string"/>
+      	  <xsd:attribute name="RTresolution" type="xsd:string"/>
+      	  <xsd:attribute name="RToffset" type="xsd:string"/>
+   	  <xsd:attribute name="RTaccuracy" type="xsd:string"/>
+      	  <xsd:attribute name="RTcurrentVal" type="xsd:string"/>
+      	  <xsd:attribute name="RTrefClk" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="RTtimingMechanismType">
+    <xsd:complexContent>
+      <xsd:extension base="TextType">
+	  <xsd:attribute name="RTstability" type="xsd:string"/>
+	  <xsd:attribute name="RTdrift" type="xsd:string"/>
+	  <xsd:attribute name="RTskew" type="xsd:string"/>
+      	  <xsd:attribute name="RTmaxValue" type="xsd:string"/>
+      	  <xsd:attribute name="RTorigin" type="xsd:string"/>
+      	  <xsd:attribute name="RTresolution" type="xsd:string"/>
+      	  <xsd:attribute name="RToffset" type="xsd:string"/>
+   	  <xsd:attribute name="RTaccuracy" type="xsd:string"/>
+      	  <xsd:attribute name="RTcurrentVal" type="xsd:string"/>
+      	  <xsd:attribute name="RTrefClk" type="xsd:string"/>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  
+  <xsd:complexType name="PAstepType">
+      <xsd:complexContent>
+        <xsd:extension base="TextType">
+  	  <xsd:attribute name="PAprob" type="xsd:string"/>
+        </xsd:extension>
+      </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="PQstateType">
+      <xsd:complexContent>
+        <xsd:extension base="TextType">
+  	  <xsd:attribute name="PQprob" type="xsd:string"/>
+        </xsd:extension>
+      </xsd:complexContent>
+  </xsd:complexType>
+  
+  <xsd:complexType name="PQtransitionType">
+       <xsd:complexContent>
+         <xsd:extension base="TextType">
+    	  <xsd:attribute name="PQthroughput" type="xsd:string"/>
+         </xsd:extension>
+       </xsd:complexContent>
+  </xsd:complexType>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</xsd:schema>
+
+
+
+
+
+
+
+
+

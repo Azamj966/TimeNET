@@ -1,0 +1,8 @@
+#!/bin/bash # The parameters for this script are: # First parameter : JavaScript 
+file name # Second parameter : first additional parameter for JavaScript 
+(accessible by arguments[0]) # Third parameter : second additional parameter for 
+JavaScript (accessible by arguments[1])
+
+cd ..
+java -Xms32m -Xmx512m -cp TimeNET.jar -DTNETHOME=. -Dlog4j.configuration="etc/gpsc_conf/log4j.props" gpsc.Host -i "etc/gpsc_conf/integration.props" -m "../Models/SCPN" $1 $2 $3
+cd SCPNScripts

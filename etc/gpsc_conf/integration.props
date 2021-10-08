@@ -1,0 +1,34 @@
+
+# Adaptor integrator - Component Names 
+integrator.Component1.Name = C1
+integrator.Component3.Name = C3
+integrator.Component4.Name = WarehouseSink
+
+# Adaptor integrator - Component Classes 
+integrator.C1.ClassName = org.openadaptor.adaptor.jdbc.SQLSource
+integrator.C3.ClassName = org.openadaptor.adaptor.standard.CheckMandatory
+integrator.WarehouseSink.ClassName = org.openadaptor.adaptor.LocalSink
+
+# Adaptor integrator - Component Links 
+integrator.C1.LinkTo1 = C3
+integrator.C3.LinkTo1 = WarehouseSink
+
+
+# Adaptor integrator - Component C1 SQLSource 
+integrator.C1.JdbcDriver = com.mysql.jdbc.Driver
+integrator.C1.JdbcUrl = jdbc:mysql://localhost/test
+integrator.C1.Password = test
+integrator.C1.SQLString = select oid, firstname, lastname, title, email from users;
+integrator.C1.UserName = test
+integrator.C1.Database = test
+integrator.C1.SQLName = Person
+
+# Adaptor integrator - Component C3 CheckMandatory 
+integrator.C3.Mandatory1 = title
+
+# Adaptor integrator - Component WarehouseSink LocalSink 
+
+# Other Properties 
+
+# Other Properties - User-added Properties 
+#log4j.configuration = log4j.props

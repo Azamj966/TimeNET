@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+ 
+BIN_DIR=${TNETHOME}/EDSPN/StatAnalysis/bin
+SHARED_BIN_DIR=${TNETHOME}/EDSPN/Shared/bin
+
+
+NETNAME=$1
+NET=${MODELDIR}/${NETNAME}.dir/${NETNAME}
+
+echo Creating Reachability Graph Visualisation...
+
+
+
+"${TNETHOME}/EDSPN/StatAnalysis/bin/showRG" ${NET}
+
+

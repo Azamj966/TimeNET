@@ -1,0 +1,44 @@
+#!/usr/bin/env csh
+###############################################################################
+#Script   	 :	derive_RES
+#
+#Purpose	 : 	Auswertung der definierten Rewardmeasures
+#
+#Project Director:	Christoph Lindemann TU Berlin
+#
+#Programmer	 :	Armin Zimmermann, Tobias Bading
+#
+#History	 :	release 1: October 1992
+#
+#                       release 2: Juni 1995 (Patrick Drescher)
+#
+###############################################################################
+#set echo
+
+set fil=$argv[1]$argv[2]
+set EPSILON=$argv[3]
+set GST=$fil.gst
+set ERC=${fil}_ERC
+set TNET_RC = ${HOME}/.TimeNET
+set BIN_DIR = StatAnalysis/bin
+set SCRIPT_DIR = StatAnalysis/scripts
+
+set CC = `${TNETHOME}/Shared/scripts/CC`
+set EXT_LD_FLAGS = `${TNETHOME}/Shared/scripts/EXT_LD_FLAGS`
+
+
+####################
+#compile and compute
+$CC -O -o $GST  $ERC.c ${TNETHOME}/${BIN_DIR}/derive_RES.a $EXT_LD_FLAGS -lm
+
+/bin/rm -f $ERC.o 
+
+echo ""
+echo "DERIVING TOKEN PROBABILITY DISTRIBUTION IN EACH PLACE ..."
+echo ""
+
+$GST $fil $EPSILON 
+# ups $GST -a "$fil"
+
+rm -f $GST
+# rm -f  ${fil}_ERC.c

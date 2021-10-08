@@ -1,0 +1,378 @@
+#!/usr/bin/env bash
+###############################################################################
+#Script   	 :	SIMULATE
+#
+#Purpose	 : 	Starten der verteilten DSPN Simulation
+#
+#Programmer	 :	Christian Kelling
+#
+#History	 :	June 1993
+#
+###############################################################################
+
+#export MODELDIR=$MODELDIR
+#export TNETHOME=$TNETHOME
+
+distr="null"
+distr_string="null"
+method="null"
+meth_string="null"
+trans="null"
+trans_string="null"
+maxsamples="null"
+maxtime="null"
+max_execution_time="null"
+nice=4
+
+#############################################################################
+# clear files                 
+#############################################################################
+function clearfiles
+{
+  \rm -f "$liblpsolve55.so"
+  \rm -f "${MODEL}_ERC.c"
+  \rm -f "${MODEL}_RDY.c"
+  \rm -f "${MODEL}_MDF.c"
+  \rm -f "${MODEL}_ERC.o"
+  \rm -f "${MODEL}_RDY.o"
+  \rm -f "${MODEL}_MDF.o"
+  \rm -f "${MODEL}.DEFINFO"
+  \rm -f "${MODEL}_master"
+  \rm -f "${MODEL}_slave"
+  \rm -f "${MODEL}.sim_curves"
+  \rm -f "${MODEL}.temp_sim_curves"
+  # $unlock_model "$NAME"
+
+  mkdir -p "${MODEL}.dir"
+
+  if [ -e "${MODEL}.pid" ];  then
+    mv "${MODEL}.pid" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}.RESULTS" ];  then
+    mv "${MODEL}.RESULTS" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}.STAT_OUT" ];  then
+    mv "${MODEL}.STAT_OUT" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}.TN" ];  then
+    mv "${MODEL}.TN" "${MODEL}.dir"
+  fi
+}
+
+#############################################################################
+# move files                 
+#############################################################################
+function movefiles
+{
+  \rm -f "$liblpsolve55.so"
+
+  mkdir -p "${MODEL}.dir"
+
+  if [ -e "${MODEL}_ERC.c" ]; then
+    mv "${MODEL}_ERC.c" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}_RDY.c" ]; then
+    mv "${MODEL}_RDY.c" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}_MDF.c" ]; then
+    mv "${MODEL}_MDF.c" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}_ERC.o" ]; then
+    mv "${MODEL}_ERC.o" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}_RDY.o" ]; then
+    mv "${MODEL}_RDY.o" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}_MDF.o" ]; then
+    mv "${MODEL}_MDF.o" "${MODEL}.dir"
+  fi    
+  if [ -e "${MODEL}.DEFINFO" ]; then
+    mv "${MODEL}.DEFINFO" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}_master" ]; then
+    mv "${MODEL}_master" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}_slave" ]; then
+    mv "${MODEL}_slave" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}.sim_curves" ]; then
+    mv "${MODEL}.sim_curves" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}.temp_sim_curves" ]; then
+    mv "${MODEL}.temp_sim_curves" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}.pid" ];  then
+    mv "${MODEL}.pid" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}.RESULTS" ];  then
+    mv "${MODEL}.RESULTS" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}.STAT_OUT" ];  then
+    mv "${MODEL}.STAT_OUT" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}.TN" ];  then
+    mv "${MODEL}.TN" "${MODEL}.dir"
+  fi
+}
+
+
+usage="Usage : SIMULATE model -{D|S} -{SV|CV|RS|MT} -{Ton|Toff} <conf.level> <errPercent> <epsilon> <seed> <max.samples> <min_firings> <max.model time> <max.real time> -{DelTrue|DelFalse}" 
+
+#input netname
+if [ $# -lt 1 ]; then
+	echo $usage
+  exit 1
+fi
+if [ $# -eq 1 ]; then
+ if [ "$1" = "-h" -o "$1" = "-help" ]; then
+    echo $usage
+    exit 1
+ fi
+fi
+
+# check environment
+if [ "$TNETHOME" = "" ]; then
+	echo "Environment variable TNETHOME is not set"
+	exit
+fi
+if [ ! -d "$TNETHOME" ]; then
+	echo "Environment variable TNETHOME is not a directory"
+	exit
+fi
+if [ "$MODELDIR" = "" ]; then
+	echo "Environment variable MODELDIR is not set"
+	exit
+fi
+if [ ! -d "$MODELDIR" ]; then
+	echo "Environment variable MODELDIR is not a directory"
+	exit
+fi
+
+# set path names
+BIN_DIR=${TNETHOME}/EDSPN/Simulation/bin
+SIM_DIR=${TNETHOME}/EDSPN/Simulation
+SHARED_BIN_DIR=${TNETHOME}/EDSPN/Shared/bin
+NAME=$1
+MODEL="$MODELDIR/$NAME"
+
+# check net
+if [ ! -e "${MODEL}.TN" ];  then
+     # if only xml-file exists, use xml2tn exporter to create TN-file
+     if [ -e "${MODEL}.xml" ];  then
+        cd "${TNETHOME}/EDSPNGen"
+        ./xml2tn.sh "${MODEL}.xml"
+        cd $currentdir
+     else
+        echo "No such net"
+        echo
+        exit -1
+     fi
+fi
+
+if [ $# -ge 2 ]; then
+        distr=$2
+else
+        distr="-D";
+fi
+
+if [ $# -ge 3 ]; then
+        method=$3
+else
+        method="-S";
+fi
+
+if [ $# -ge 4 ]; then
+        trans=$4
+else
+        trans="-Ton";
+fi
+
+if [ $# -ge 5 ]; then
+        level=$5
+else
+        level="95";
+fi
+
+if [ $# -ge 6 ]; then
+        errPercent=$6
+else
+        errPercent="50";
+fi
+
+if [ $# -ge 7 ]; then
+        epsilon=$7
+else
+        epsilon="10";
+fi
+
+if [ $# -ge 8 ]; then
+        seed=$8
+else
+        seed="1";
+fi
+
+if [ $# -ge 9 ]; then
+        maxsamples=$9
+else
+        maxsamples="0";
+fi
+
+if [ $# -ge 10 ]; then
+        min_firings=${10}
+else
+        min_firings="50";
+fi
+
+if [ $# -ge 11 ]; then
+        maxtime=${11}
+else
+        maxtime="0.0";
+fi
+
+if [ $# -ge 12 ]; then
+        max_execution_time=${12}
+else
+        max_execution_time="0.0";
+fi
+
+#This parameter was removed from the call on the script.
+Visu_On="-Voff";
+
+if [ $# -ge 13 ]; then
+        del_files=${13}
+else
+        del_files="-DelTrue";
+fi
+
+
+case $distr in
+  -S)
+	   distr_string="Sequential "
+	   distr="S"
+	   ;;
+  -D)
+	   distr_string="Parallel "
+	   distr="D"
+	   ;;
+  *)
+	   echo $usage
+	   exit 1
+     ;;
+esac
+
+case $trans in
+  -Ton)
+	   trans_string="on."
+	   trans="Ton"
+	   ;;
+  -Toff)
+	   trans_string="off."
+	   trans="Toff"
+	   ;;
+  *)
+	   echo $usage
+	   exit 1
+esac
+
+case $method in
+  -RS)
+     meth_string="RESTART with spectral variance analysis "
+     method="-RS"
+     ;;
+  -SV)
+	   meth_string="spectral variance analysis "
+	   method="-SV"
+	   ;;
+  -CV)
+	   meth_string="control variates variance reduction "
+	   method="-CV"
+	   ;;
+  -MT)
+	   meth_string="Multitrajectory"
+	   method="-MT"
+	   ;;
+  *)
+	   echo $usage
+	   exit 1
+esac
+
+
+echo
+if [ $method = "-MT" ]; then
+echo "Multi-Trajectoy Simulation of net:" 
+echo "$MODEL"
+else
+echo $distr_string" Simulation" 
+echo "with "$meth_string" of net:"
+echo "$MODEL"
+echo "Detection of the initial transient period is "$trans_string
+fi
+
+
+#############################################################################
+# marking dependencies, definition of rewardmeasures
+#
+# execute 'proc_TN'
+#############################################################################
+"${SHARED_BIN_DIR}/proc_tn" -s "$NAME"
+if [ $? -ne 0 ]; then
+  echo
+  echo ERROR STATE $STATUS occurred while PROC_TN execution.
+  # $unlock_model $NAME
+  echo SOLUTION OF MODEL $NAME FAILED.
+  echo
+  clearfiles
+  exit -1
+fi
+# echo "proc_tn done."
+
+
+gcc -I"${SIM_DIR}/include" -I"${SIM_DIR}/sim_utils/include" -O -c -o "${MODEL}_MDF.o" "${MODEL}_MDF.c"
+gcc -I"${SIM_DIR}/include" -I"${SIM_DIR}/sim_utils/include" -O -c -o "${MODEL}_ERC.o" "${MODEL}_ERC.c"
+gcc -I"${SIM_DIR}/include" -I"${SIM_DIR}/sim_utils/include" -O -c -o "${MODEL}_RDY.o" "${MODEL}_RDY.c"
+
+
+case $method in
+  -CV)
+        gcc -o "${MODEL}_slave" "${MODEL}_MDF.o" "${MODEL}_ERC.o" "${BIN_DIR}/libsim_cv_slave_lnx.a" -L"${BIN_DIR}" -lsim_utils_lnx -L"${SHARED_BIN_DIR}" -lsysdep_lnx -lnetio_lnx -lm
+        gcc -o "${MODEL}_master" "${MODEL}_RDY.o" "${BIN_DIR}/libsim_cv_master_lnx.a" -L"${BIN_DIR}" -lsim_utils_lnx -L"${SHARED_BIN_DIR}" -lsysdep_lnx -lnetio_lnx -lm
+        ;;
+  -SV)
+        gcc -o "${MODEL}_slave" "${MODEL}_MDF.o" "${MODEL}_ERC.o" "${BIN_DIR}/libsim_spec_slave_lnx.a" -L"${BIN_DIR}" -lsim_utils_lnx -L"${SHARED_BIN_DIR}" -lsysdep_lnx -lnetio_lnx -lm
+        gcc -o "${MODEL}_master" "${MODEL}_RDY.o" "${BIN_DIR}/libsim_spec_master_lnx.a" -L"${BIN_DIR}" -lsim_utils_lnx -L"${SHARED_BIN_DIR}" -lsysdep_lnx -lnetio_lnx -lm
+        ;;
+
+  -RS)
+		if [ -e "$liblpsolve55.so" ];  then
+			mv "$${BIN_DIR}/liblpsolve55.so" "${MODEL}.dir"
+		fi
+		gcc -c "${MODEL}_ImpFct.c" -I"${SIM_DIR}/include" -o "${MODEL}_ImpFct.o"
+		gcc -o "${MODEL}_slave" "${MODEL}_ImpFct.o" "${MODEL}_MDF.o" "${MODEL}_ERC.o" "${BIN_DIR}/libsim_rst_slave_lnx.a" -L"${BIN_DIR}" -lsim_utils_lnx -llpsolve55 -ldl  -lcolamd -L"${SHARED_BIN_DIR}" -lsysdep_lnx -lnetio_lnx -lm
+        gcc -o "${MODEL}_master" "${MODEL}_RDY.o" "${BIN_DIR}/libsim_rst_master_lnx.a" -L"${BIN_DIR}" -lsim_utils_lnx -L"${SHARED_BIN_DIR}" -lsysdep_lnx -lnetio_lnx -lm
+        ;;
+  -MT)
+    gcc -o "${MODEL}_slave" "${MODEL}_MDF.o" "${MODEL}_ERC.o" "${BIN_DIR}/libsim_mt_slave_lnx.a" -L"${BIN_DIR}" -lsim_utils_lnx -L"${SHARED_BIN_DIR}" -lsysdep_lnx -lnetio_lnx -lm
+    gcc -o "${MODEL}_master" "${MODEL}_RDY.o" "${BIN_DIR}/libsim_mt_master_lnx.a" -L"${BIN_DIR}" -lsim_utils_lnx -L"${SHARED_BIN_DIR}" -lsysdep_lnx -lnetio_lnx -lm
+        ;;
+esac
+
+if [ ! -e "${MODEL}_master" -o ! -e "${MODEL}_slave" ]; then
+   echo "Could not build the simulator, for errors see above."
+   # $unlock_model $NAME
+   clearfiles
+   exit 1
+fi
+
+"${MODEL}_master" "$NAME" $level $epsilon $seed $maxsamples $maxtime $max_execution_time $distr $trans $min_firings $errPercent $Visu_On
+if [ $? -ne 0 ]; then
+   echo "could not finish main simulation"
+   clearfiles
+   exit 1
+fi
+
+
+if [ "$del_files" == "-DelFalse" ]; then
+  movefiles
+else
+  clearfiles
+fi

@@ -1,0 +1,80 @@
+#!/usr/bin/env bash 
+###############################################################################
+#Script   	 :	traps
+#calculate traps of a net
+###############################################################################
+
+#export MODELDIR=$MODELDIR
+#export TNETHOME=$TNETHOME
+
+currentdir=`pwd`
+
+# check environment
+if [ "$TNETHOME" = "" ]; then
+	echo "Environment variable TNETHOME is not set"
+	exit;
+fi
+if [ ! -d "$TNETHOME" ]; then
+	echo "Environment variable TNETHOME is not a directory"
+	exit;
+fi
+if [ "$MODELDIR" = "" ]; then
+	echo "Environment variable MODELDIR is not set"
+	exit;
+fi
+if [ ! -d "$MODELDIR" ]; then
+	echo "Environment variable MODELDIR is not a directory"
+	exit;
+fi
+
+# set path names
+SHARED_BIN_DIR=${TNETHOME}/EDSPN/Shared/bin
+NAME=$1
+MODEL="$MODELDIR/$NAME"
+
+# check net
+if [ ! -e "$MODEL.TN" ];  then
+     # if only xml-file exists, use xml2tn exporter to create TN-file
+     if [ -e "$MODEL.xml" ];  then
+        cd "${TNETHOME}/EDSPNGen"
+        ./xml2tn.sh "$MODEL.xml"
+        cd $currentdir
+     else
+        echo "No such net"
+        echo
+        exit -1
+     fi
+fi
+
+# Markierungsabh"angigkeiten, Ergebnisdefinitionen
+"${SHARED_BIN_DIR}/proc_tn" -s "$NAME"
+#> "$MODEL.err"
+
+# Traps
+"${SHARED_BIN_DIR}/traps" "$NAME"
+# >> "$MODEL.err"
+
+cat "${MODEL}.traps"
+
+\rm -f "${MODEL}_MDF.c"
+\rm -f "${MODEL}_ERC.c"
+\rm -f "${MODEL}_RDY.c"
+\rm -f "${MODEL}.pmf"
+
+mkdir -p "${MODEL}.dir"
+
+if [ -e "${MODEL}.traps" ];  then
+   mv "${MODEL}.traps" "${MODEL}.dir"
+fi
+if [ -e "${MODEL}.INV" ];  then
+   mv "${MODEL}.INV" "${MODEL}.dir"
+fi
+if [ -e "${MODEL}.ECS" ];  then
+   mv "${MODEL}.ECS" "${MODEL}.dir"
+fi
+if [ -e "${MODEL}.DEFINFO" ];  then
+   mv "${MODEL}.DEFINFO" "${MODEL}.dir"
+fi
+if [ -e "${MODEL}.TN" ];  then
+   mv "${MODEL}.TN" "${MODEL}.dir"
+fi

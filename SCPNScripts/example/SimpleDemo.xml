@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<net id="17" netclass="GMPN" xmlns="http://timenet.tu-ilmenau.de/schema/GMPN"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://timenet.tu-ilmenau.de/schema/GMPN etc/schemas/GMPN.xsd">
+  <place capacity="2" id="8" initialMarking="1" path="P1" queue="FIFO"
+    tokentype="int" type="node" watch="true">
+    <graphics x="200" y="145"/>
+    <label id="8.0" text="P1" type="text">
+      <graphics x="9" y="-18"/>
+    </label>
+  </place>
+  <place capacity="2" id="9" initialMarking="2" path="P2" queue="FIFO"
+    tokentype="int" type="node" watch="true">
+    <graphics x="429" y="139"/>
+    <label id="9.0" text="P2" type="text">
+      <graphics x="9" y="-18"/>
+    </label>
+  </place>
+  <timedTransition id="10" logfileDescription="" logfileExpression=""
+    logfileName="" manualCode="" path="T1" serverType="ExclusiveServer"
+    specType="Automatic" takeFirst="false" timeFunction="EXP(10.0)"
+    timeGuard="" type="node" watch="true">
+    <graphics x="326" y="239"/>
+    <label id="10.0" text="T1" type="text">
+      <graphics x="2" y="-20"/>
+    </label>
+  </timedTransition>
+  <timedTransition id="11" logfileDescription="" logfileExpression=""
+    logfileName="" manualCode="" path="T2" serverType="ExclusiveServer"
+    specType="Automatic" takeFirst="false" timeFunction="EXP(20.0)"
+    timeGuard="" type="node" watch="true">
+    <graphics x="327" y="51"/>
+    <label id="11.0" text="T2" type="text">
+      <graphics x="0" y="-21"/>
+    </label>
+  </timedTransition>
+  <arc fromNode="9" id="12" toNode="11" type="connector">
+    <inscription id="12.0" text="a" type="inscriptionText">
+      <graphics x="11" y="4"/>
+    </inscription>
+  </arc>
+  <arc fromNode="11" id="13" toNode="8" type="connector">
+    <inscription id="13.0" text="a" type="inscriptionText">
+      <graphics x="-8" y="5"/>
+    </inscription>
+  </arc>
+  <arc fromNode="8" id="14" toNode="10" type="connector">
+    <inscription id="14.0" text="a" type="inscriptionText">
+      <graphics x="-15" y="24"/>
+    </inscription>
+  </arc>
+  <arc fromNode="10" id="15" toNode="9" type="connector">
+    <inscription id="15.0" text="a" type="inscriptionText">
+      <graphics x="12" y="29"/>
+    </inscription>
+  </arc>
+  <measure expression="#P1+#P2" id="16" result="R1" type="text">
+    <graphics x="165" y="30"/>
+  </measure>
+</net>

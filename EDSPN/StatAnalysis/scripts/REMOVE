@@ -1,0 +1,103 @@
+#!/usr/bin/env csh
+###############################################################################
+#Script   	 :	REMOVE
+#
+#Purpose	 : 	L"osschen nicht ben"otigter Zwischenresultate
+#			oder ganzen Modellbeschreibungen oder Verzeichnisse oder V.-Hierarchien
+#
+#Project Director:	Christoph Lindemann TU Berlin
+#
+#Programmer	 :	Martin M"uller, Tobias Bading, Armin Zimmermann, Christian L"uhe
+#
+#History	 :	release 1: October 1992
+#
+###############################################################################
+
+#set echo
+
+set mode=''
+switch ( $1 )
+    case -n: 
+	shift
+	set mode='all'
+	breaksw;
+    case -p: 
+	shift
+	set mode='printouts'
+	breaksw;
+    case -r: 
+	shift
+	set mode='res'
+	breaksw;
+    case -d:
+	shift
+	set mode='dir'
+	breaksw;
+    case -h:
+	shift
+	set mode='hierarchie'
+	breaksw;
+    default: 
+	set mode='zwischenres'
+	breaksw;
+endsw
+
+foreach netname($argv)
+
+switch ( $mode )
+case res:
+case all: 
+case zwischenres:
+case printouts:
+   foreach resultfile ( ${MODELDIR}/$netname.* ${MODELDIR}/${netname}_* )
+	switch ( $mode ) 
+	    case all: 
+		\rm -f $resultfile
+		breaksw;
+	    case res:
+#.PROBMARK ist f"ur throughput berechnung notwendig
+# von MSOLVE angelegt sind: .CURVES, .MSOLVE_out, .TN%%
+		if ( $resultfile:e != TN && $resultfile:e != tex && \
+		     $resultfile:e != ps && $resultfile:e != eps )  \
+		then
+		    \rm -f $resultfile
+		endif
+		breaksw;
+
+	    case printouts:
+		if ( $resultfile:e == ps || $resultfile:e == eps || \
+		     $resultfile:e == tex ) \
+		then
+		    \rm -f $resultfile
+		endif
+		breaksw;
+
+	    case zwischenres:
+		if ( $resultfile:e != TN	&& $resultfile:e != AUX		&& \
+		     $resultfile:e != CURVES	&& $resultfile:e != LOG		&& \
+		     $resultfile:e != PROBTOK	&& $resultfile:e != RESULTS	&& \
+		     $resultfile:e != TN%% && \
+		     $resultfile:e != INV	&& $resultfile:e != ECS		&& \
+		     $resultfile:e != ps	&& $resultfile:e != eps		&& \
+		     $resultfile:e != tex ) \
+		then
+		    \rm -f $resultfile
+		endif
+		breaksw;
+	    default:
+		breaksw;
+	endsw
+    end
+breaksw;
+
+case dir:
+	\rmdir ${MODELDIR}/$netname	
+breaksw;
+
+case hierarchie:
+	\rm -rf ${MODELDIR}/$netname
+breaksw;
+
+endsw
+end
+

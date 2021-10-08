@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+###############################################################################
+#Script          :      count.script
+#
+#Purpose         :      Zustandsraumschaetzung
+#			Uebersetzt eine von polycount.c genertierte
+#			Quelldatei ( loopcount.c)
+#			und führt sie aus
+#
+#Programmer      :      Alexander Huck
+#
+#History         :      release 1: Nov 1998
+#
+###############################################################################
+
+
+SHARED_DIR=${TNETHOME}/EDSPN/Shared
+
+\rm -f "loopcount"
+\rm -f "count_result"
+
+gcc -O3 loopcount.c -x c "${SHARED_DIR}/scripts/timer.c" -o loopcount
+
+./loopcount > count_result

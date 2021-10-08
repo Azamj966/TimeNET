@@ -1,0 +1,33 @@
+
+# Adaptor adaptor - Component Names 
+adaptor.Component1.Name = AccessSource
+adaptor.Component2.Name = Warehouse
+
+# Adaptor adaptor - Component Classes 
+adaptor.AccessSource.ClassName = org.openadaptor.adaptor.jdbc.SQLSource
+adaptor.Warehouse.ClassName = org.openadaptor.adaptor.standard.FileSink
+
+# Adaptor adaptor - Component Links 
+adaptor.AccessSource.LinkTo1 = Warehouse
+
+
+# Adaptor adaptor - Component ExcelTableSource SQLSource 
+adaptor.AccessSource.JdbcDriver = sun.jdbc.odbc.JdbcOdbcDriver
+adaptor.AccessSource.JdbcUrl = jdbc:odbc:InputDB
+adaptor.AccessSource.SQLString = Select * From Tabelle1;
+adaptor.AccessSource.Database = openadaptor
+adaptor.AccessSource.Password = 
+adaptor.AccessSource.UserName =
+adaptor.AccessSource.SQLName = loop
+
+# Adaptor adaptor - Component Warehouse FileSink 
+adaptor.Warehouse.CreateOutputFile = true
+adaptor.Warehouse.DOStringWriter = org.openadaptor.dostrings.XMLStringWriter
+adaptor.Warehouse.OutputFileName = warehouse.xml
+
+# Adaptor adaptor - Component Warehouse XMLStringWriter 
+adaptor.Warehouse.WriteBatchAsRecord = false
+adaptor.Warehouse.WriteAsXMLFragments = true
+adaptor.Warehouse.WriteEmptyAttributes = true
+adaptor.Warehouse.WriteEmptyObjects = true
+adaptor.Warehouse.RootObjectsTagName = loop

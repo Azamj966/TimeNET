@@ -1,0 +1,170 @@
+#!/usr/bin/env bash
+###############################################################################
+# Program:		GENERATE_RRG <netname>
+#
+# Purpose:		Generate the .rrg and .tmark files for further
+#			processing by SOLVE_DSPN. The creation process is
+#			defined in the Makefile GENERATE_RRG.Make.
+#
+#                       The environment variable TNETHOME must be set to the
+#                       TNETZ base directory. The sub-directories bin and 
+#                       scripts have to be present. The variable MODELDIR
+#                       points to the models directory.
+#
+# Project Director:	Reinhard German
+#
+# Programmer:		Ulrich Hertlein
+#
+# History:		Release 1: April 14, 1994
+###############################################################################
+
+#export MODELDIR=$MODELDIR
+#export TNETHOME=$TNETHOME
+
+currentdir=`pwd`
+
+#############################################################################
+# clear files                 
+#############################################################################
+function clearfiles
+{
+#  \rm -f "${MODEL}_ERC.c"
+  \rm -f "${MODEL}_MDF.c"
+  \rm -f "${MODEL}_MDF.o"
+#  \rm -f "${MODEL}.pmf"
+#  \rm -f "${MODEL}.genrrg"
+
+#  mkdir -p "${MODEL.dir}"
+
+#  if [ -e "${MODEL}.STRUCT" ];  then
+#    mv "${MODEL}.STRUCT" "${MODEL}.dir"
+#  fi
+#  if [ -e "${MODEL}.DEFINFO" ];  then
+#    mv "${MODEL}.DEFINFO" "${MODEL}.dir"
+#  fi
+#  if [ -e "${MODEL}.rrg" ];  then
+#    mv "${MODEL}.rrg" "${MODEL}.dir"
+#  fi
+#  if [ -e "${MODEL}.tmark" ];  then
+#    mv "${MODEL}.tmark" "${MODEL}.dir"
+#  fi
+#  if [ -e "${MODEL}.INV" ];  then
+#    mv "${MODEL}.INV" "${MODEL}.dir"
+#  fi
+#  if [ -e "${MODEL}.ECS" ];  then
+#    mv "${MODEL}.ECS" "${MODEL}.dir"
+#  fi
+#  if [ -e "${MODEL}.TN" ];  then
+#    mv "${MODEL}.TN" "${MODEL}.dir"
+#  fi
+}
+
+usage()
+{
+	echo "Usage: GENERATE_RRG [-t] <net-name>"
+	echo "  -t = transient analysis (allows absorbing states)"
+	exit;
+}
+
+# check arguments
+if [ $# -eq 0 ]; then
+	usage;
+fi
+
+# check environment
+if [ "$TNETHOME" = "" ]; then
+	echo "Environment variable TNETHOME is not set"
+	exit;
+fi
+if [ ! -d "$TNETHOME" ]; then
+	echo "Environment variable TNETHOME is not a directory"
+	exit;
+fi
+if [ "$MODELDIR" = "" ]; then
+	echo "Environment variable MODELDIR is not set"
+	exit;
+fi
+if [ ! -d "$MODELDIR" ]; then
+	echo "Environment variable MODELDIR is not a directory"
+	exit;
+fi
+
+
+#spool arguments to get model name
+if [ $# -gt 2 ]; then
+	echo "Only one Argument!"
+	exit;
+fi
+
+if [ $# -gt 1 ]; then
+	ARGON="-t"
+	shift
+fi
+
+# set path names
+SHARED_BIN_DIR=${TNETHOME}/EDSPN/Shared/bin
+NAME=$1
+MODEL="$MODELDIR/$NAME"
+
+# check net
+if [ ! -e "$MODEL.TN" ];  then
+     # if only xml-file exists, use xml2tn exporter to create TN-file
+     if [ -e "$MODEL.xml" ];  then
+        cd "${TNETHOME}/EDSPNGen"
+        ./xml2tn.sh "$MODEL.xml"
+        cd $currentdir
+     else
+        echo "No such net"
+        echo
+        exit -1
+     fi
+fi
+
+#############################################################################
+# marking dependencies, definition of rewardmeasures
+#
+# execute 'proc_TN'
+#############################################################################
+"${SHARED_BIN_DIR}/proc_tn" "$NAME"
+if [ $? -ne 0 ]; then
+  echo
+  echo ERROR STATE $STATUS occurred while PROC_TN execution.
+  # $unlock_model $NAME
+  echo SOLUTION OF MODEL $NAME FAILED.
+  echo
+  clearfiles
+  exit -1
+fi
+# echo "proc_tn done."
+
+#############################################################################
+# structural analysis
+#
+# execute 'struc_tn'
+#############################################################################
+"${SHARED_BIN_DIR}/struct_tn" -i "$NAME"
+
+if [ $? -ne 0 ]; then
+  echo
+  echo ERROR STATE $STATUS occurred while STRUCT_TN execution.
+  # $unlock_model $NAME
+  echo SOLUTION OF MODEL $NAME FAILED.	
+  echo
+  clearfiles
+  exit -1
+fi
+# echo "struct_tn done."
+
+# execute Makefile
+echo "GENERATING REDUCED REACHABILITY GRAPH '$NAME'"
+
+gcc $CFLAGS -o "${MODEL}.genrrg" "${MODEL}_MDF.c" "${SHARED_BIN_DIR}/libgenrrg_lnx.a" -L"${SHARED_BIN_DIR}" -lsysdep_lnx -lm
+
+"$MODEL.genrrg" $ARGON "$NAME"
+if [ $? -ne 0 ]; then
+   echo "could not generate reduced reachability graph"
+   clearfiles
+   exit 1
+fi
+
+clearfiles

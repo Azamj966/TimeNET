@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+##############################################################################
+## Script      : pvm_tnet_auth                                              ##
+##                                                                          ##
+## Purpose     : Wait to be killed.                                         ##
+##               Called by initPvm() (../src/pvm3cpp/tnet_util.cpp).        ##
+##               Main process will shutdown PVM and terminate               ##
+##               as soon as this process gets killed.                       ##
+##                                                                          ##
+## Programmer  : Philipp Berndt                                             ##
+## Pr. Direct. : Reinhard German                                            ##
+## Date        : July of 1999                                               ##
+## Diplomarbeit: Parallelisierung eines iterativen Lösungsverf. f. SPN      ##
+##############################################################################
+
+# Sleep forever
+while true
+do
+  sleep 65535 # 18 hours
+done
+

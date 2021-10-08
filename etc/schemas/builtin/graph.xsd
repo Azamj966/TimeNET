@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema attributeFormDefault="unqualified"
+  elementFormDefault="qualified"
+  targetNamespace="http://timenet.tu-ilmenau.de/schema/GRAPH"
+  xmlns="http://timenet.tu-ilmenau.de/schema/GRAPH" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <xsd:element name="graphics">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="rectangle" type="rectangleType"/>
+	  <xsd:element name="variableRectangle" type="rectangleType"/>
+          <xsd:element name="segment" type="segmentType"/>
+          <xsd:element name="polygon" type="polygonType"/>
+          <xsd:element name="text" type="textType"/>
+        </xsd:choice>
+      </xsd:sequence>
+      <xsd:attribute name="x" type="xsd:integer" use="required"/>
+      <xsd:attribute name="y" type="xsd:integer" use="required"/>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:complexType name="polygonType">
+    <xsd:sequence>
+      <xsd:element maxOccurs="unbounded" name="lineTo" type="lineToType"/>
+    </xsd:sequence>
+    <xsd:attribute name="x" type="xsd:nonNegativeInteger" use="required"/>
+    <xsd:attribute name="y" type="xsd:nonNegativeInteger" use="required"/>
+  </xsd:complexType>
+  <xsd:complexType name="segmentType">
+    <xsd:attribute name="width" type="xsd:positiveInteger" use="required"/>
+    <xsd:attribute name="height" type="xsd:positiveInteger" use="required"/>
+    <xsd:attribute name="startAngle" type="angleTypeDegrees" use="required"/>
+    <xsd:attribute name="extensionAngle" type="angleTypeDegrees" use="required"/>
+    <xsd:attribute name="color" type="colorType" use="required"/>
+    <xsd:attribute name="selectedColor" type="colorType" use="required"/>
+    <xsd:attribute name="x" type="xsd:integer" use="required"/>
+    <xsd:attribute name="y" type="xsd:integer" use="required"/>
+  </xsd:complexType>
+  <xsd:complexType name="rectangleType">
+    <xsd:attribute name="width" type="xsd:positiveInteger" use="required"/>
+    <xsd:attribute name="height" type="xsd:positiveInteger" use="required"/>
+    <xsd:attribute name="color" type="colorType" use="required"/>
+    <xsd:attribute name="selectedColor" type="colorType" use="required"/>
+    <xsd:attribute name="flashedColor" type="colorType" use="optional"/>
+    <xsd:attribute name="x" type="xsd:integer" use="required"/>
+    <xsd:attribute name="y" type="xsd:integer" use="required"/>
+    <xsd:attribute name="mx" type="xsd:nonNegativeInteger" use="optional"/>
+    <xsd:attribute name="my" type="xsd:nonNegativeInteger" use="optional"/>
+  </xsd:complexType>
+  <xsd:complexType name="textType">
+    <xsd:attribute name="color" type="colorType" use="required"/>
+    <xsd:attribute name="selectedColor" type="colorType" use="required"/>
+    <xsd:attribute name="text" type="xsd:string"/>
+    <xsd:attribute name="x" type="xsd:integer" use="required"/>  
+    <xsd:attribute name="y" type="xsd:integer" use="required"/> 
+    <xsd:attribute name="isInscription" type="xsd:boolean" use="optional"/>
+  </xsd:complexType>
+  <xsd:complexType name="pointType">
+    <xsd:attribute name="x" type="xsd:nonNegativeInteger" use="required"/>
+    <xsd:attribute name="y" type="xsd:nonNegativeInteger" use="required"/>
+  </xsd:complexType>
+  <xsd:simpleType name="angleTypeDegrees">
+    <xsd:restriction base="xsd:double">
+      <xsd:minInclusive value="0"/>
+      <xsd:maxInclusive value="360"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="colorType">
+    <xsd:restriction base="xsd:string">
+      <xsd:pattern value="#[0-9A-F]{6}"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:complexType name="lineToType">
+    <xsd:attribute name="x" type="xsd:integer" use="required"/>
+    <xsd:attribute name="y" type="xsd:integer" use="required"/>
+    <xsd:attribute name="color" type="colorType" use="required"/>
+    <xsd:attribute name="selectedColor" type="colorType" use="required"/>
+    <xsd:attribute name="width" type="xsd:float" use="required"/>
+  </xsd:complexType>
+</xsd:schema>

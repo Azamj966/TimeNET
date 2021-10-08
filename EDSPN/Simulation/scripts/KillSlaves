@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+#echo "Kill all Slaves .."
+
+if test $# -eq 0 
+then 
+	echo "You have to name a PID-File !"
+	exit 1
+fi
+
+\cat $1 | 
+\nawk '
+
+/[A-z]+/ {
+          if ($3 == "Slave") 	{
+				 printf("+")
+				 #printf("/usr/bin/rsh %s \\kill %d\n",$1,$2)
+				 system("/usr/bin/rsh "$1" \kill "$2)
+				}
+         }
+'
+echo " Simulation has been terminated "

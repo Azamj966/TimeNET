@@ -1,0 +1,289 @@
+#!/usr/bin/env bash
+#################################################################
+#Script          :       RESTART
+#
+#Purpose         :       Starten von RESTART
+#
+#Programmer      :       Patrick Drescher
+#
+#History         :       April 1995
+#
+#################################################################
+
+#export MODELDIR=$MODELDIR
+#export TNETHOME=$TNETHOME
+
+distr="null"
+distr_string="null"
+method="null"
+meth_string="null"
+trans="null"
+trans_string="null"
+maxsamples="null"
+maxtime="null"
+max_execution_time="null"
+max_thresholds="null"
+first_threshold="null"
+last_threshold="null"
+if_mode="null"
+splitting_factor="null"
+nice=4
+
+#############################################################################
+# clear files                 
+#############################################################################
+function clearfiles
+{
+  \rm -f "$MODEL_ERC.c"
+  \rm -f "$MODEL_RDY.c"
+  \rm -f "$MODEL_MDF.c"
+  \rm -f "$MODEL.DEFINFO"
+  \rm -f "$MODEL.TN"
+  \rm -f "$MODEL.RESULTS"
+  \rm -f "$MODEL.PARAM"
+  \rm -f "$MODEL_ImpFct.c"
+
+  mkdir -p "$MODEL.dir"
+
+  if [ -e "${MODEL}.ECS" ];  then
+    mv "$MODEL.ECS" "$MODEL.dir"
+  fi
+  if [ -e "${MODEL}.INV" ];  then
+    mv "$MODEL.INV" "$MODEL.dir"
+  fi
+  if [ -e "${MODEL}.STRUCT" ];  then
+    mv "$MODEL.STRUCT" "$MODEL.dir"
+  fi
+}
+
+
+usage="Usage : RESTART model -{D|S} <first_threshold> <last_threshold> <max_thresholds>  <-Ton|Toff> <conf.level> <epsilon> <seed> <max.samples> <min_firings> <max.model time> <max.real time> <splitting_factor>"
+
+#input netname
+if [ $# -lt 1 ]; then
+	echo $usage
+  exit 1
+fi
+if [ $# -eq 1 ]; then
+ if [ "$1" = "-h" -o "$1" = "-help" ]; then
+    echo $usage
+    exit 1
+ fi
+fi
+
+# check environment
+if [ "$TNETHOME" = "" ]; then
+	echo "Environment variable TNETHOME is not set"
+	exit
+fi
+if [ ! -d "$TNETHOME" ]; then
+	echo "Environment variable TNETHOME is not a directory"
+	exit
+fi
+if [ "$MODELDIR" = "" ]; then
+	echo "Environment variable MODELDIR is not set"
+	exit
+fi
+if [ ! -d "$MODELDIR" ]; then
+	echo "Environment variable MODELDIR is not a directory"
+	exit
+fi
+
+# set path names
+BIN_DIR=${TNETHOME}/EDSPN/Simulation/bin
+SIM_DIR=${TNETHOME}/EDSPN/Simulation
+SHARED_BIN_DIR=${TNETHOME}/EDSPN/Shared/bin
+NAME=$1
+MODEL="$MODELDIR/$NAME"
+
+# check net
+if [ ! -e "$MODEL.TN" ];  then
+     # if only xml-file exists, use xml2tn exporter to create TN-file
+     if [ -e "$MODEL.xml" ];  then
+        cd "${TNETHOME}/EDSPNGen"
+        ./xml2tn.sh "$MODEL.xml"
+        cd $currentdir
+     else
+        echo "No such net"
+        echo
+        exit -1
+     fi
+fi
+
+
+if [ $# -ge 2 ]; then
+        distr=$2
+else
+        distr="-D";
+fi
+
+if [ $# -ge 3 ]; then
+		if_mode=$3
+else 
+		if_mode="ImportanceFunction"
+fi
+
+if [ $# -ge 4 ]; then
+       first_threshold=$4
+else
+       first_threshold="1";
+fi
+
+if [ $# -ge 5 ]; then
+       last_threshold=$5
+else
+       last_threshold="5";
+fi
+
+if [ $# -ge 6 ]; then
+       max_thresholds=$6
+else
+       max_thresholds="5";
+fi
+
+if [ $# -ge 7 ]; then
+       trans=$7
+else
+       trans="-Ton";
+fi
+
+if [ $# -ge 8 ]; then
+       level=$8
+else
+       level="90";
+fi
+
+if [ $# -ge 9 ]; then
+       epsilon=$9
+else
+       epsilon="10";
+fi
+
+if [ $# -ge 10 ]; then
+       seed=$10
+else
+       seed="1";
+fi
+
+if [ $# -ge 11 ]; then
+       maxsamples=$11
+else
+       maxsamples="0";
+fi
+
+if [ $# -ge 12 ]; then
+       min_firings=$12
+else
+       min_firings="50";
+fi
+
+if [ $# -ge 13 ]; then
+       maxtime=$13
+else
+       maxtime="0.0";
+fi
+
+if [ $# -ge 14 ]; then
+       max_real_time=$14
+else
+       max_real_time="0.0";
+fi
+
+if [ $# -ge 15 ]; then
+       splitting_factor=$15
+else
+       splitting_factor="4";
+fi
+
+case $distr in
+  -S)
+	   distr_string="Sequential "
+	   distr="S"
+	   ;;
+  -D)
+	   distr_string="Parallel "
+	   distr="D"
+	   ;;
+  *)
+	   echo $usage
+	   exit 1
+     ;;
+esac
+
+case $trans in
+  -Ton)
+	   trans_string="on."
+	   trans="Ton"
+	   ;;
+  -Toff)
+	   trans_string="off."
+	   trans="Toff"
+	   ;;
+  *)
+	   echo $usage
+	   exit 1
+esac
+
+echo $distr_string" Simulation with RESTART of net:"
+echo "$MODEL"
+
+#############################################################################
+# marking dependencies, definition of rewardmeasures
+#
+# execute 'proc_TN'
+#############################################################################
+"${SHARED_BIN_DIR}/proc_tn" -s "$NAME"
+if [ $? -ne 0 ]; then
+  echo
+  echo ERROR STATE $STATUS occurred while PROC_TN execution.
+  # $unlock_model $NAME
+  echo SOLUTION OF MODEL $NAME FAILED.
+  echo
+  clearfiles
+  exit -1
+fi
+# echo "proc_tn done."
+
+#############################################################################
+# structural analysis
+#
+# execute 'struc_tn'
+#############################################################################
+"${SHARED_BIN_DIR}/struct_tn" -i "$NAME"
+if [ $? -ne 0 ]; then
+  echo
+  echo ERROR STATE $STATUS occurred while STRUCT_TN execution.
+  # $unlock_model $NAME
+  echo SOLUTION OF MODEL $NAME FAILED.	
+  echo
+  clearfiles
+  exit -1
+fi
+# echo "struct_tn done."
+
+
+"${BIN_DIR}/sim_rst_set" "${MODEL}" ${first_threshold} ${last_threshold} ${max_thresholds} ${if_mode} ${splitting_factor} 
+if [ $? -ne 0 ]; then
+   echo "could not finish threshold-setting of RESTART"
+   clearfiles
+   exit 1
+fi
+
+echo ""
+echo "Threshold-setting of RESTART finished."
+echo ""
+
+#echo Starting main simulation with script SIMULATE with the following paramters: 
+
+#echo SIMULATE ${NAME} -${distr} -RS -${trans} ${level} 50 ${epsilon} ${seed} ${maxsamples} ${min_firings} ${maxtime} ${max_real_time} -DelTrue
+"${TNETHOME}/EDSPN/Simulation/scripts/SIMULATE" "${NAME}" -${distr} -RS -${trans} ${level} 50 ${epsilon} ${seed} ${maxsamples} ${min_firings} ${maxtime} ${max_real_time} -DelTrue
+if [ $? -ne 0 ]; then
+   echo "could not finish main simulation of RESTART"
+   clearfiles
+   exit 1
+fi
+
+echo ""
+echo "Main simulation of RESTART finished."
+
+clearfiles

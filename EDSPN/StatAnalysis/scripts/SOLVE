@@ -1,0 +1,628 @@
+#!/usr/bin/env bash
+#############################################################################
+## Evaluation : STATIONARY ANALYSIS                                        ##
+#############################################################################
+## Script     : SOLVE                                                      ##
+##                                                                         ##
+## Purpose    : start calculation of the stationary solution               ##
+##              called by TimeNET from tnlink.c (Agnes)                    ##
+##              can be called from command line (with debugger)            ##
+##                                                                         ##
+## Programmer : Armin Zimmermann, Tobias Bading, Martin M"uller            ##
+## Pr. Direct.:	Christoph Lindemann TU Berlin                              ##
+## History    : release 1: October of 1992                                 ##
+##              release 2: june of 1995                                    ##
+##                                                                         ##
+## Programmer : Oliver Hesse                                               ##
+## Date       : release 3: june of 1999                                    ##
+## Master's T.: realis. of an iterative solution method for not marc. SPNs ##
+#############################################################################
+
+#export MODELDIR=$MODELDIR
+#export TNETHOME=$TNETHOME
+
+#############################################################################
+# check options and arguments         
+#############################################################################
+
+# show usage for help
+function usage
+{
+  echo
+  echo 'Usage:'
+  echo 'SOLVE netname -E [-s|-p] [-d|-i maxiter] [-a bits] [epsilon] [truncerror]'
+  echo 'SOLVE netname -I maxiter [-s|-p] [-u|-l|-r seedval] [-v] [-a bits] [epsilon] [truncerror]'
+  echo
+  echo 'E: EMC explicit solution method   I: fill-in avoidance solution method'
+  echo 's: sequential execution           p: distributed execution'
+  echo 'd: direct solve of LGS            i: iterative solve of LGS'
+  echo 'u: uniform initial vector         r: random initial vector'
+  echo 'l: load initial vector from file  v: save stationary vector'
+  echo 'a: use arbitrary precision        D: start with debugger'
+  echo
+  exit -1
+}
+
+#############################################################################
+# clear files                 
+#############################################################################
+function clearfiles
+{
+  \rm -f "${MODEL}.graph"
+  \rm -f "${MODEL}_MDF.c"
+
+  \rm -f "${MODEL}.gst"
+  \rm -f "${MODEL}_ERC.c"
+
+  \rm -f "${MODEL}.*.time"
+  \rm -f "${MODEL}.*.mem"
+
+  \rm -f "${MODEL}.DEFINFO"
+  \rm -f "${MODEL}.RES"
+
+  #csh -f -e "${SCRIPT_DIR}/REMOVE" "$NAME"
+
+  \rm "$AUX"
+
+  \rm -f "${MODEL}.EMC*"
+  \rm -f "${MODEL}.CONV*"
+  \rm -f "${MODEL}.RATES"
+  \rm -f "${MODEL}.PROBMARK"
+  \rm -f "${MODEL}.pmf"
+  \rm -f "${MODEL}.FIREFREQ"
+
+  \rm -f "${MODEL}.dir/${NAME}.vg"
+  \rm -f "${MODEL}.dir/${NAME}_reach_graph.pdf"
+  \rm -f "${MODEL}.dir/${NAME}_reach_graph.gif"
+  \rm -f "${MODEL}.dir/${NAME}_reach_graph.svg"
+  \rm -f "${MODEL}.dir/${NAME}_reach_graph.html"
+  \rm -f "${MODEL}.dir/${NAME}_reach_graph.png"
+
+  mkdir -p "${MODEL}.dir"
+
+  if [ -e "${MODEL}.RESULTS" ]; then
+    mv "${MODEL}.RESULTS" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}.STRUCT" ]; then
+    mv "${MODEL}.STRUCT" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}.INV" ]; then
+    mv "${MODEL}.INV" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}.ECS" ]; then
+    mv "${MODEL}.ECS" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}.TN" ]; then
+    mv "${MODEL}.TN" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}.PROBTOK" ]; then
+    mv "${MODEL}.PROBTOK" "${MODEL}.dir"
+  fi
+
+  if [ -e "${MODEL}.RG" ]; then
+    mv "${MODEL}.RG" "${MODEL}.dir"
+  fi
+
+
+  mv ${MODEL}.MDET_* ${MODEL}.dir
+  mv ${MODEL}.DELTA_* ${MODEL}.dir
+}
+
+#input netname
+if [ $# -lt 1 ]; then
+	echo $usage
+  exit 1
+fi
+if [ $# -eq 1 ]; then
+ if [ "$1" = "-h" -o "$1" = "-help" ]; then
+    echo $usage
+    exit 1
+ fi
+fi
+
+# check environment
+if [ "$TNETHOME" = "" ]; then
+	echo "Environment variable TNETHOME is not set"
+	exit
+fi
+if [ ! -d "$TNETHOME" ]; then
+	echo "Environment variable TNETHOME is not a directory"
+	exit
+fi
+if [ "$MODELDIR" = "" ]; then
+	echo "Environment variable MODELDIR is not set"
+	exit
+fi
+if [ ! -d "$MODELDIR" ]; then
+	echo "Environment variable MODELDIR is not a directory"
+	exit
+fi
+
+# set path names
+BIN_DIR=${TNETHOME}/EDSPN/StatAnalysis/bin
+SHARED_BIN_DIR=${TNETHOME}/EDSPN/Shared/bin
+NAME=$1
+MODEL="$MODELDIR/$NAME"
+
+# check net
+if [ ! -e "$MODEL.TN" ];  then
+     # if only xml-file exists, use xml2tn exporter to create TN-file
+     if [ -e "$MODEL.xml" ];  then
+        cd "${TNETHOME}/EDSPNGen"
+        ./xml2tn.sh "$MODEL.xml"
+        cd $currentdir
+     else
+        echo "No such net"
+        echo
+        exit -1
+     fi
+fi
+
+# declare arguments as integer
+declare -i MAX_ITER
+declare -i SEED_VAL
+declare -i ARB_BITS
+
+# check options with arguments
+shift
+while getopts 'DEI:psdi:ulr:va:' option ; do
+
+  case $option in 
+  D)
+    debug=1
+    ;;
+  p)
+    distributed_exec=1
+    EXEC_MODE=parallel
+    ;;
+  s)
+    sequential_exec=1
+    EXEC_MODE=sequential
+    ;;
+  E)
+    explicit_method=1
+    SOL_METHOD=EMC_explicit
+    ;;
+  d)
+    direct_solve=1
+    SOL_MODE=-a
+    MAX_ITER=5000
+    ;;
+  i)
+    iter_solve=1
+    SOL_MODE=-i
+    MAX_ITER=$OPTARG
+    if [ $MAX_ITER -eq 0 ]; then
+      echo
+      echo 'ERROR: -i: missing number of max iterations'
+      usage
+    fi
+    ;;
+  I)
+    iterative_method=1
+    SOL_METHOD=FI_avoidance
+    MAX_ITER=$OPTARG
+    if [ $MAX_ITER -eq 0 ]; then
+      echo
+      echo 'ERROR: -I: missing number of max iterations'
+      usage
+    fi
+    ;;
+  u)
+    uniform_vec=1
+    INIT_VEC=uniform
+    SEED_VAL=0
+    ;;
+  r)
+    random_vec=1
+    INIT_VEC=random
+    SEED_VAL=$OPTARG
+    if [ $SEED_VAL -eq 0 ]; then
+      echo
+      echo 'ERROR: -r: missing seed value'
+      usage
+    fi
+    ;;
+  l)
+    load_vec=1
+    INIT_VEC=load
+    SEED_VAL=0
+    ;;
+  v)
+    save_stat_vec=1
+    ;;
+  a)
+    arbitrary=1
+    ARB_BITS=$OPTARG
+    if [ $ARB_BITS -eq 0 ]; then
+      echo
+      echo 'ERROR: -a: missing number of bits'
+      usage
+    fi
+    ;;
+  esac
+
+done
+
+
+# check selected overall solution method
+if [ "$explicit_method" -a "$iterative_method" ]; then
+  echo
+  echo 'ERROR: use only one of [-E|-I] for solution method'
+  usage
+fi 
+if [ ! "$explicit_method" -a ! "$iterative_method" ]; then
+  echo
+  echo 'ERROR: use one of [-E|-I] for solution method'
+  usage
+fi 
+
+# check selected execution mode
+if [ "$sequential_exec" -a "$distributed_exec" ]; then
+  echo
+  echo 'ERROR: use only one of [-s|-p] for execution mode'
+  usage
+fi 
+if [ ! "$sequential_exec" -a ! "$distributed_exec" ]; then
+  echo
+  echo 'ERROR: use one of [-s|-p] for execution mode'
+  usage
+fi 
+
+# check selected options for EMC explicit solution method
+if [ "$explicit_method" ]; then
+  if [ "$direct_solve" -a "$iter_solve" ]; then
+    echo
+    echo 'ERROR: use only one of [-d|-i maxiter] for solve LGS'
+    usage
+  fi 
+  if [ ! "$direct_solve" -a ! "$iter_solve" ]; then
+    echo
+    echo 'ERROR: use one of [-d|-i maxiter] for solve LGS'
+    usage
+  fi 
+  if [ "$uniform_vec" -o "$random_vec" -o "$load_vec" ]; then
+    echo
+    echo 'ERROR: [-u|-l|-r seedval] are illegal options for EMC explicit SM'
+    usage
+  fi
+  if [ "$save_stat_vec" ]; then
+    echo
+    echo 'ERROR: [-v] is an illegal option for EMC explicit SM'
+    usage
+  fi
+fi
+
+# check selected option for fill-in avoidance solution method
+if [ "$iterative_method" ]; then
+  if [ "$uniform_vec" -a "$random_vec" -o \
+       "$uniform_vec" -a "$load_vec" -o \
+       "$random_vec"  -a "$load_vec" ]; then
+    echo
+    echo 'ERROR: use only one of [-u|-l|-r seedval] for fill-in avoidance SM'
+    usage
+  fi
+  if [ ! "$uniform_vec" -a ! "$random_vec" -a ! "$load_vec" ]; then
+    echo
+    echo 'ERROR: use one of [-u|-l|-r seedval] for fill-in avoidance SM'
+    usage
+  fi 
+  if [ "$direct_solve" -o "$iter_solve" ]; then
+    echo
+    echo 'ERROR: [-d|-i maxiter] are illegal options for fill-in avoidance SM'
+    usage
+  fi 
+
+  # save option
+  if [ "$save_stat_vec" ]; then
+    SAVE_VEC=yes
+  else
+    SAVE_VEC=no
+  fi
+fi 
+
+
+# check if no arbitrary precision is selected
+if [ ! "$arbitrary" ]; then
+  ARB_BITS=0
+fi
+
+
+# clear the options
+shift $(($OPTIND-1))
+
+# check rest of arguments
+if [ $# -gt 3 ]; then
+    echo
+    echo 'ERROR: too many arguments'
+    usage
+else
+  if [ $# -eq 0 ]; then
+    EPSILON=1e-07
+    TRUNC_ERROR=1e-07
+  else
+    EPSILON=$1
+    TRUNC_ERROR=$2
+  fi
+fi
+
+
+#############################################################################
+# write to AUX file
+#############################################################################
+
+AUX=${MODELDIR}/$NAME.AUX
+
+echo SOLUTION METHOD steady-state > $AUX
+echo MODEL $MODEL >> $AUX
+echo SOLUTION METHOD $SOL_METHOD >> $AUX
+
+if [ $EXEC_MODE = sequential ]; then
+  echo TRANSIENT ANALYSIS sequential >> $AUX
+else
+  echo TRANSIENT ANALYSIS parallel >> $AUX
+fi
+
+echo ARBITRARY BITS $ARB_BITS >> $AUX
+echo EPSILON $EPSILON >> $AUX
+echo TRUNCATION ERROR $TRUNC_ERROR >> $AUX
+
+if [ $SOL_METHOD = EMC_explicit ]; then
+  echo INITIAL VECTOR $INIT_VEC >> $AUX
+  echo SEED VALUE $SEED_VAL >> $AUX
+  echo SAVE VECTOR $SAVE_VEC >> $AUX
+fi
+
+
+#############################################################################
+# start stationary analysis ...
+#############################################################################
+
+echo
+echo STEADY STATE SOLUTION OF NET $NAME
+
+# $lock_model "$NAME"
+
+
+#############################################################################
+# marking dependencies, definition of rewardmeasures
+#
+# execute 'proc_TN'
+#############################################################################
+
+"${SHARED_BIN_DIR}/proc_tn" "$NAME"
+STATUS=$?
+
+if [ $STATUS -ne 0 ]; then
+  echo
+  echo ERROR STATE $STATUS occurred while PROC_TN execution.
+  # $unlock_model $NAME
+  echo SOLUTION OF MODEL $NAME FAILED.
+  echo
+  clearfiles
+  exit -1
+fi
+
+
+#############################################################################
+# structural analysis
+#
+# execute 'struc_tn'
+#############################################################################
+
+"${SHARED_BIN_DIR}/struct_tn" -i "$NAME"
+STATUS=$?
+
+if [ $STATUS -ne 0 ]; then
+  echo
+  echo ERROR STATE $STATUS occurred while STRUCT_TN execution.
+  # $unlock_model $NAME
+  echo SOLUTION OF MODEL $NAME FAILED.	
+  echo
+  clearfiles
+  exit -1
+fi
+
+
+#############################################################################
+# reduced reachability graph (RRG), markov chains, isomorphie and topology
+# tests, execute rand and erand processes
+# in case of EMC explicit solution method
+#
+# reduced reachability graph (RRG), markov chains
+# iterative solution method with fill-in avoidance  
+# in case of iterative solution method with fill-in avoidance
+#
+# execute '<model>.graph'
+#############################################################################
+
+# compile and link (show no outputs)
+gcc -o "$MODEL.graph" "${MODEL}_MDF.c" "$BIN_DIR/libderive_SMC_lnx.a" -lstdc++ -L"${BIN_DIR}" -lsolve_Factors_lnx -lparse_definition_lnx -lrand_procs_lnx -lmem_lnx -L"${SHARED_BIN_DIR}" -lsysdep_lnx -larbPrec_lnx -lm
+# $LL $LY
+
+STATUS=$?
+
+if [ $STATUS -ne 0 ]; then
+  echo
+  echo ERROR STATE $STATUS occurred while make $MODEL.graph.
+  # $unlock_model $NAME
+  echo SOLUTION OF MODEL $NAME FAILED.	
+  echo
+  clearfiles
+  exit -1
+fi
+
+
+# use time efficient algorithm
+if [ $SOL_METHOD = EMC_explicit ]; then
+
+  if [ $debug ]; then
+    # execute with debugger (in case of EMC explicit SM)
+    echo "set args -f $NAME $SOL_METHOD $EXEC_MODE $ARB_BITS $EPSILON $TRUNC_ERROR" > /tmp/gdb.cmd
+
+    #gdb "$MODEL.graph" -command=/tmp/gdb.cmd \
+    #    -d "$TNETHOME/StatAnalysis/src" -d "$TNETHOME/Shared/src/vmmath" \
+    #    -d "$TNETHOME/Shared/src/arbPrec"
+    
+    rm /tmp/gdb.cmd
+  else  
+    # execute without debugger (in case of EMC explicit SM)
+    "$MODEL.graph" -f "$NAME" $SOL_METHOD $EXEC_MODE $ARB_BITS $EPSILON $TRUNC_ERROR
+  fi
+  STATUS=$?
+
+else
+
+  if [ $debug ]; then
+    # execute with debugger (in case of iterative SM)
+    echo "set args $NAME $SOL_METHOD $EXEC_MODE $ARB_BITS $EPSILON $TRUNC_ERROR $MAX_ITER $INIT_VEC $SEED_VAL $SAVE_VEC"> /tmp/gdb.cmd
+
+    #gdb "$MODEL.graph" -command=/tmp/gdb.cmd \
+    #    -d "$TNETHOME/StatAnalysis/src" -d "$TNETHOME/Shared/src/vmmath" \
+    #    -d "$TNETHOME/Shared/src/arbPrec"
+
+    rm /tmp/gdb.cmd
+  else
+    #execute without debugger (in case of iterative SM)   
+    "$MODEL.graph" "$NAME" $SOL_METHOD $EXEC_MODE $ARB_BITS $EPSILON $TRUNC_ERROR $MAX_ITER $INIT_VEC $SEED_VAL $SAVE_VEC  
+  fi
+  STATUS=$?
+
+fi
+
+if [ $STATUS -ne 0 -a $STATUS -ne 2 ]; then
+  echo
+  echo ERROR STATE $STATUS occurred while MODEL.graph execution.
+  # $unlock_model $NAME
+  echo SOLUTION OF MODEL $NAME FAILED.	
+  echo
+  clearfiles
+  exit -1
+fi
+
+
+if [ $STATUS -eq 2 ]; then
+
+  # use memory efficient algorithm
+  echo 'Not enough main memory, retrying with option -m'
+
+  if [ $SOL_METHOD = EMC_explicit ]; then
+
+    # retry execute (in case of EMC explicit SM)
+    "$MODEL.graph" -m "$NAME" $SOL_METHOD $EXEC_MODE $ARB_BITS $EPSILON $TRUNC_ERROR
+    STATUS=$?
+
+  else
+
+    # retry execute (in case of iterative SM)
+    "$MODEL.graph" -m "$NAME" $SOL_METHOD $EXEC_MODE $ARB_BITS $EPSILON $TRUNC_ERROR $MAX_ITER $INIT_VEC $SEED_VAL $SAVE_VEC  
+    STATUS=$?
+
+  fi
+
+  if [ $STATUS -ne 0 ]; then
+    echo
+    echo ERROR STATE $STATUS occurred while MODEL.graph execution.
+    # $unlock_model $NAME
+    echo SOLUTION OF MODEL $NAME FAILED.	
+    echo
+    clearfiles
+    exit -1
+  fi
+
+fi
+
+#############################################################################
+# solve linear equation system (LGS)
+# only in case of EMC explicit solution method
+#
+# execute 'solve_LGS'
+#############################################################################
+CONVERSION_STATUS=0
+if [ $SOL_METHOD = EMC_explicit ]; then
+
+  if [ $debug ]; then
+    #execute with debugger    
+    echo "set args $SOL_MODE $NAME $MAX_ITER $EPSILON"> /tmp/gdb.cmd
+
+    #gdb "${BIN_DIR}/solve_LGS" -command=/tmp/gdb.cmd \
+    #    -d "$TNETHOME/StatAnalysis/src"
+
+    rm /tmp/gdb.cmd
+  else
+    #execute without debugger    
+    "${BIN_DIR}/solve_LGS" $SOL_MODE "$NAME" $MAX_ITER $EPSILON
+  fi	
+  STATUS=$?
+  CONVERSION_STATUS=$STATUS
+
+  if [ $STATUS -ne 0 ]; then
+	if [ $STATUS -ne 2 ]; then
+
+		echo
+		echo ERROR STATE $STATUS occurred while SOLVE_LGS execution.
+		# $unlock_model $NAME
+		echo SOLUTION OF MODEL $NAME FAILED.	
+		echo
+		clearfiles
+	        exit -1
+	fi
+  fi
+
+fi
+
+
+#############################################################################
+# derive results (reward measures)
+#
+# execute '<model>.gst'
+#############################################################################
+
+echo 
+echo DERIVING TOKEN PROBABILITY DISTRIBUTION IN EACH PLACE ...
+echo 
+
+# compile and link (show no outputs)
+gcc -O -o "$MODEL.gst" "${MODEL}_ERC.c" "$BIN_DIR/libderive_RES_lnx.a" -L"${SHARED_BIN_DIR}" -lsysdep_lnx -lm
+
+STATUS=$?
+
+if [ $STATUS -ne 0 ]; then
+  echo
+  echo ERROR STATE $STATUS occurred while make $MODEL.gst.
+  # $unlock_model $NAME
+  echo SOLUTION OF MODEL $NAME FAILED.	
+  echo
+  clearfiles
+  exit -1
+fi
+
+
+# execute
+"$MODEL.gst" "$NAME" $EPSILON
+STATUS=$?
+CONVERSION_STATUS=$STATUS
+
+if [ $STATUS -ne 0 ]; then
+  echo
+  echo ERROR STATE $STATUS occurred while MODEL.gst execution.
+  # $unlock_model $NAME
+  echo SOLUTION OF MODEL $NAME FAILED.	
+  echo
+  clearfiles
+  exit -1
+fi
+
+
+#############################################################################
+# stationary analysis finished.
+#############################################################################
+
+# $unlock_model $NAME
+clearfiles
+if [ $CONVERSION_STATUS -eq 2 ]; then
+	echo WARNING: Solution obtained but with NO CONVERGENCE, try to increase\: Max. iterations linear system solution, or use direct solver.
+else
+	echo SOLUTION OBTAINED.
+fi
+echo

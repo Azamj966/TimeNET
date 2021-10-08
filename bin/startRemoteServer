@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+
+if [ ! -n "$1" ]
+then
+	echo "Usage: startResultMonitor <portnumber>"
+  exit $E_BADARGS
+fi  
+
+if [ ! -n "$2" ]
+then
+	echo "Usage: startResultMonitor <portnumber>"
+  exit $E_BADARGS
+fi  
+
+currentdir=`pwd`
+tnetpath="`expr "$0" : '\(.*\)/'`"
+cd "$tnetpath/.."
+java -cp TimeNET.jar server.Server $1 "$2"
+cd "$currentdir"

@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+###############################################################################
+# Program:              TransSolve [options] <netname>
+#
+# Purpose:		Compiliert eigentliche Programm und ruft es auf.
+#			Options werden nach trans_solve.o (main.c) weitergeleitet.
+#
+# Project Director:	Reinhard German
+#
+# Programmer:           Joerg W. Mitzlaff
+#
+# History:              10.94 (Dipl.Arbeit)
+###############################################################################
+
+#export MODELDIR=$MODELDIR
+#export TNETHOME=$TNETHOME
+
+#############################################################################
+# clear files                 
+#############################################################################
+function clearfiles
+{
+  \rm -f "$MODEL_ERC.c"
+  \rm -f "$MODEL_ERC.o"
+  \rm -f "${MODEL}.TransSolve"
+  \rm -f "${MODEL}.genrrg"
+  \rm -f "${MODEL}.tempcurves"
+
+  mkdir -p "$MODEL.dir"
+
+  if [ -e "${MODEL}.curves" ]; then
+    mv -f "${MODEL}.curves" "${MODEL}.dir"
+  fi 
+  if [ -e "${MODEL}.RESULTS" ]; then
+    mv -f "${MODEL}.RESULTS" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}.pmf" ]; then
+    mv -f "${MODEL}.pmf" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}.rrg" ]; then
+    mv -f "${MODEL}.rrg" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}.tmark" ]; then
+    mv -f "${MODEL}.tmark" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}.DEFINFO" ]; then
+    mv -f "${MODEL}.DEFINFO" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}.STRUCT" ]; then
+    mv -f "${MODEL}.STRUCT" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}.ECS" ]; then
+    mv -f "${MODEL}.ECS" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}.INV" ]; then
+    mv -f "${MODEL}.INV" "${MODEL}.dir"
+  fi
+  if [ -e "${MODEL}.TN" ]; then
+    mv -f "${MODEL}.TN" "${MODEL}.dir"
+  fi
+}
+
+
+usage="Usage: TransSolve model [-g graphics] [-t trans_time] [-s stepsize] [-o point | duration] [-r result_stepsize] [-c cluster_size ] [-p precision] [-k] [-x] [-O] [-a]"
+
+#input netname
+if [ $# -lt 1 ]; then
+	echo $usage
+  exit 1
+fi
+if [ $# -eq 1 ]; then
+ if [ "$1" = "-h" -o "$1" = "-help" ]; then
+    echo $usage
+    exit 1
+ fi
+fi
+
+# check environment
+if [ "$TNETHOME" = "" ]; then
+	echo "Environment variable TNETHOME is not set"
+	exit
+fi
+if [ ! -d "$TNETHOME" ]; then
+	echo "Environment variable TNETHOME is not a directory"
+	exit
+fi
+if [ "$MODELDIR" = "" ]; then
+	echo "Environment variable MODELDIR is not set"
+	exit
+fi
+if [ ! -d "$MODELDIR" ]; then
+	echo "Environment variable MODELDIR is not a directory"
+	exit
+fi
+
+NAME=$1
+shift
+ARGS=$*
+
+# set path names
+BIN_DIR=${TNETHOME}/EDSPN/TransientSolution/bin
+SHARED_DIR=${TNETHOME}/EDSPN/Shared
+SHARED_BIN_DIR=${TNETHOME}/EDSPN/Shared/bin
+MODEL="$MODELDIR/$NAME"
+
+# check net
+if [ ! -e "$MODEL.TN" ];  then
+     # if only xml-file exists, use xml2tn exporter to create TN-file
+     if [ -e "$MODEL.xml" ];  then
+        cd "${TNETHOME}/EDSPNGen"
+        ./xml2tn.sh "$MODEL.xml"
+        cd $currentdir
+     else
+        echo "No such net"
+        echo
+        exit -1
+     fi
+fi
+
+echo "COMPILE $MODEL.TransSolve File and execute it."
+ 
+# generate reduced reachability graph
+"${SHARED_DIR}/scripts/GENERATE_RRG" -t "$NAME"
+if [ $? -ne 0 ]; then
+   echo "could not generate reduced reachability graph"
+   clearfiles
+   exit 1
+fi
+
+# compile
+# echo $CC $CFLAGS -o "${MODEL}.TransSolve" "${MODEL}_ERC.c" $TRANSLIB $EXT_LD_FLAGS -lm
+gcc $CFLAGS -o "${MODEL}.TransSolve" "${MODEL}_ERC.c" "${BIN_DIR}/libtrans_solve_lnx.a" -L"${SHARED_BIN_DIR}" -lnetio_lnx -lsysdep_lnx -lm
+ 
+# We are starting now!
+"$MODEL.TransSolve" $ARGS "$NAME"
+if [ $? -ne 0 ]; then
+   echo "could not finish main analysis"
+   clearfiles
+   exit 1
+fi
+
+clearfiles

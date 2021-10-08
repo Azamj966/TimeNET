@@ -1,0 +1,71 @@
+####################################################################
+# Makefile for Cluster Simulation in GnuMake (gmake) format
+
+SOURCES = $(wildcard *.cpp) 
+OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
+DIR = $(shell pwd) #name of current directory
+# name of executable = directory name - .dir +.sim
+TARGET = %MODELNAME%
+# -Wl = pass option to linker
+# -Bstatic = linker option to use .a library
+# -Bdynamic = use .so library
+LIBS = -L%MAIN%/lib -lSimulation -lGMDB -lxerces-c \
+	-lsal -lrandgen -Wl,-Bstatic \
+	-L$(HOME)/unixODBC/lib -Wl,-Bdynamic -lodbc
+INCLUDES = -I%MAIN%/GMPN/src/Simulation/src -I%MAIN%/GMPN/src/DB/src \
+	-I%MAIN%/Vendor/SAL -I%MAIN%/Vendor/SmartPointers \
+	-I%MAIN%/Vendor/xercesc/include \
+	-I%MAIN%/Vendor \
+	-I/usr/local/mpich/include \
+	-isystem $(HOME)/include -isystem /usr/local/mpich/include
+
+####################################################################
+CXX = mpiCC
+
+#-------------------------------------------------------------------
+# Flags for the c++ compiler
+CXXFLAGS = -g -Wall -pipe
+CXXNOFLAGS = -g -Wall -pipe
+
+# Flags for the C preprocessor
+CPPFLAGS = $(INCLUDES)
+
+#-------------------------------------------------------------------
+# Flags for the linker
+
+LDFLAGS = $(LIBS)
+
+# Phony targets
+.PHONY: all clean mrproper depend
+
+all: $(TARGET)
+
+clean:
+	rm -f $(OBJECTS) $(TARGET)
+
+mrproper: clean
+	rm -f *~ .depend
+
+depend: .depend
+
+####################################################################
+# Explicit rules
+
+$(TARGET): $(OBJECTS)
+	$(CXX) $^ $(LDFLAGS) -o $@
+
+buildnet.o: buildnet.cpp
+	$(CXX) $(CXXNOFLAGS) $(CPPFLAGS) -c -o $@ $<
+
+.depend: $(SOURCES)
+# For each source, let the compiler run the preprocessor with the -M and -MM
+# options, which causes it to output a dependency suitable for make.
+	@echo -n "Generating dependencies ..."
+	@for source in $^ ; do \
+		$(CXX) $(CXXFLAGS) $(CPPFLAGS) -MM $$source; \
+	done > $@ 
+	@echo " done."
+
+# Include the generated dependencies. If they don't exist yet GNU make will
+# automatically generate them using the .depend: rule.
+-include .depend

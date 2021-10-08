@@ -1,0 +1,18 @@
+#
+# Set root logger priority to INFO and set its only appender to OAErrAppender
+#
+
+log4j.rootLogger=INFO, OAErrAppender
+
+#
+# OAErrAppender is setup to be a ConsoleAppender 
+# This example is configured to write to system error.
+#
+
+log4j.appender.OAErrAppender=org.apache.log4j.ConsoleAppender
+log4j.appender.OAAppender.target=System.err
+log4j.appender.OAAppender.ImmediateFlush=true
+
+# OAErrAppender uses PatternLayout.
+log4j.appender.OAErrAppender.layout=org.apache.log4j.PatternLayout
+log4j.appender.OAErrAppender.layout.ConversionPattern=%p: %m%n

@@ -1,0 +1,176 @@
+#!/usr/bin/env bash
+###############################################################################
+#Script   	 :	TOKENGAME
+#
+#Purpose	 : 	Starten des Markenspiels
+#
+#Programmer	 :	Christian Kelling
+#
+#History	 :	June 1993
+#
+###############################################################################
+
+#export MODELDIR=$MODELDIR
+#export TNETHOME=$TNETHOME
+
+distr="null"
+distr_string="null"
+method="null"
+meth_string="null"
+trans="null"
+trans_string="null"
+maxsamples="null"
+maxtime="null"
+max_execution_time="null"
+nice=4
+
+#############################################################################
+# clear files                 
+#############################################################################
+function clearfiles
+{
+  \rm -f "$MODEL_ERC.c"
+  \rm -f "$MODEL_RDY.c"
+  \rm -f "$MODEL_MDF.c"
+  \rm -f "$MODEL_ERC.o"
+  \rm -f "$MODEL_RDY.o"
+  \rm -f "$MODEL_MDF.o"
+  \rm -f "$MODEL.DEFINFO"
+  \rm -f "$MODEL_master"
+  \rm -f "$MODEL_slave"
+  \rm -f "$MODEL.sim_curves"
+  \rm -f "$MODEL.temp_sim_curves"
+  # $unlock_model "$NAME"
+
+  mkdir -p "$MODEL.dir"
+
+  if [ -e "${MODEL}.pid" ];  then
+    mv "$MODEL.pid" "$MODEL.dir"
+  fi
+  if [ -e "${MODEL}.RESULTS" ];  then
+    mv "$MODEL.RESULTS" "$MODEL.dir"
+  fi
+  if [ -e "${MODEL}.STAT_OUT" ];  then
+    mv "$MODEL.STAT_OUT" "$MODEL.dir"
+  fi
+  if [ -e "${MODEL}.TN" ];  then
+    mv "$MODEL.TN" "$MODEL.dir"
+  fi
+}
+
+usage="Usage : TOKENGAME model <seed>" 
+
+#input netname
+if [ $# -lt 1 ]; then
+	echo $usage
+  exit 1
+fi
+if [ $# -eq 1 ]; then
+ if [ "$1" = "-h" -o "$1" = "-help" ]; then
+    echo $usage
+    exit 1
+ fi
+fi
+
+# check environment
+if [ "$TNETHOME" = "" ]; then
+	echo "Environment variable TNETHOME is not set"
+	exit
+fi
+if [ ! -d "$TNETHOME" ]; then
+	echo "Environment variable TNETHOME is not a directory"
+	exit
+fi
+if [ "$MODELDIR" = "" ]; then
+	echo "Environment variable MODELDIR is not set"
+	exit
+fi
+if [ ! -d "$MODELDIR" ]; then
+	echo "Environment variable MODELDIR is not a directory"
+	exit
+fi
+
+# set path names
+BIN_DIR=${TNETHOME}/EDSPN/Simulation/bin
+SIM_DIR=${TNETHOME}/EDSPN/Simulation
+SHARED_BIN_DIR=${TNETHOME}/EDSPN/Shared/bin
+NAME=$1
+MODEL="$MODELDIR/$NAME"
+
+# check net
+if [ ! -e "$MODEL.TN" ];  then
+     # if only xml-file exists, use xml2tn exporter to create TN-file
+     if [ -e "$MODEL.xml" ];  then
+        cd "${TNETHOME}/EDSPNGen"
+        ./xml2tn.sh "$MODEL.xml"
+        cd $currentdir
+     else
+        echo "No such net"
+        echo
+        exit -1
+     fi
+fi
+
+distr="S"
+distr_string="Sequential"
+method="-S"
+meth_string="spectral variance analysis"
+trans="-Ton"
+level="95"
+errPercent="50"
+epsilon="10"
+#changed the fixed value to be set by parameter 2
+seed=$2
+maxsamples="0"
+min_firings="50"
+maxtime="0.0"
+max_execution_time="0.0"
+Visu_On="-Voff"
+tg="tg"
+
+
+echo $distr_string"Simulation" 
+echo "with "$meth_string"of net:"
+echo "$MODEL"
+echo "Detection of the initial transient period is "$trans_string
+
+#############################################################################
+# marking dependencies, definition of rewardmeasures
+#
+# execute 'proc_TN'
+#############################################################################
+"${SHARED_BIN_DIR}/proc_tn" -s "$NAME"
+if [ $? -ne 0 ]; then
+  echo
+  echo ERROR STATE $STATUS occurred while PROC_TN execution.
+  # $unlock_model "$NAME"
+  echo SOLUTION OF MODEL $NAME FAILED.
+  echo
+  clearfiles
+  exit -1
+fi
+# echo "proc_tn done."
+
+
+gcc -I"${SIM_DIR}/include" -I"${SIM_DIR}/sim_utils/include" -O -c -o "${MODEL}_MDF.o" "${MODEL}_MDF.c"
+gcc -I"${SIM_DIR}/include" -I"${SIM_DIR}/sim_utils/include" -O -c -o "${MODEL}_ERC.o" "${MODEL}_ERC.c"
+gcc -I"${SIM_DIR}/include" -I"${SIM_DIR}/sim_utils/include" -O -c -o "${MODEL}_RDY.o" "${MODEL}_RDY.c"
+
+gcc -o "${MODEL}_slave" "${MODEL}_MDF.o" "${MODEL}_ERC.o" "${BIN_DIR}/libsim_spec_slave_lnx.a" -L"${BIN_DIR}" -lsim_utils_lnx -L"${SHARED_BIN_DIR}" -lsysdep_lnx -lnetio_lnx -lm
+gcc -o "${MODEL}_master" "${MODEL}_RDY.o" "${BIN_DIR}/libsim_spec_master_lnx.a" -L"${BIN_DIR}" -lsim_utils_lnx -L"${SHARED_BIN_DIR}" -lsysdep_lnx -lnetio_lnx -lm
+
+if [ ! -e "${MODEL}_master" -o ! -e "${MODEL}_slave" ]; then
+   echo "Could not build the simulator, for errors see above."
+   # $unlock_model $NAME
+   clearfiles
+   exit 1
+fi
+
+"${MODEL}_master" "$NAME" $level $epsilon $seed $maxsamples $maxtime $max_execution_time $distr $trans $min_firings $errPercent $Visu_On $tg
+if [ $? -ne 0 ]; then
+   echo "could not finish main simulation"
+   clearfiles
+   exit 1
+fi
+
+clearfiles

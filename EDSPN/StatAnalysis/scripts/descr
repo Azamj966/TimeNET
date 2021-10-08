@@ -1,0 +1,40 @@
+#!/usr/bin/env csh 
+###############################################################################
+#Script   	 :	descr
+#generate .inc (incidence), .mo (initial marking),
+# .pd (place description) file 
+###############################################################################
+#set echo
+
+set TNETHOME = $TNETHOME/EDSPN
+
+set CSHARG = "-e -f"
+set NAME	= $1
+set MODEL	= $MODELDIR/$NAME
+
+set STRUCT	= ${TNETHOME}/Shared/bin/descr
+set PROC_TN	= ${TNETHOME}/Shared/bin/proc_TN
+
+set xml2tndir=${TNETHOME}/xml2tn
+set currentdir=`pwd`
+
+#check netname
+if (  ! -e $MODEL.TN  )  then
+     # if only xml-file exists, use xml2tn exporter to create TN-file
+     if (  -e $MODEL.xml  )  then
+        cd $xml2tndir
+        ./xml2tn.sh $MODEL.xml
+        cd $currentdir
+     else
+        echo "No such net"
+        exit (1)
+     endif
+endif
+
+# Markierungsabh"angigkeiten, Ergebnisdefinitionen
+$PROC_TN $NAME > $MODEL.err
+
+# description
+$STRUCT $MODEL >> $MODEL.err
+
+\rm -f ${MODEL}.DEFINFO 
